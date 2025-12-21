@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register user</title>
+    <link rel="stylesheet" th:href="@{/css/registration.css}">
+</head>
+<body>
+<div class="form-container">
+    <p id="main-header">Faculty Registration</p>
+
+    <div id="message" style="display: none; padding: 10px; margin: 10px 0; border-radius: 5px;"></div>
+
+    <form id="registerForm" class="registration-form">
+        <div class="personal-information">
+            <div class="identity">
+                <div class="form-group">
+                    <label>First name</label>
+                    <input type="text" name="first-name" id="first-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Middle name</label>
+                    <input type="text" name="middle-name" id="middle-name" placeholder="(Optional)">
+                </div>
+
+                <div class="form-group">
+                    <label>Last name</label>
+                    <input type="text" name="last-name" id="last-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="suffix">Suffix</label>
+                    <select id="suffix" name="suffix">
+                        <option value=""></option>
+                        <option value="Jr">Jr</option>
+                        <option value="Sr">Sr</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                        <option value="IV">IV</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="role-department">
+                <div class="form-group">
+                    <label for="role">Select role</label>
+                    <select id="role" name="role" required>
+                        <option value=""></option>
+                        <option value="FACULTY">Faculty</option>
+                        <option value="DEPT_HEAD">Department Head</option>
+                        <option value="DEAN">Dean</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <select id="department" name="department">
+                        <option value=""></option>
+                        <option value="BIO">Biology</option>
+                        <option value="ENV">Envi-Science</option>
+                        <option value="IT">Info-Technology</option>
+                        <option value="MB">Marine-Bio</option>
+                        <option value="MATH">Mathematics</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="contact">
+                <div class="form-group">
+                    <label>Contact no.</label>
+                    <input type="tel" name="contact-no" id="contact-no" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" id="email" required>
+                </div>
+            </div>
+
+            <div class="address">
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea name="address" id="address"></textarea>
+                </div>
+            </div>
+
+            <div class="account-information">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" id="reg-username" minlength="4" maxlength="20" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" id="reg-password" minlength="6" required>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button type="submit" id="register-button">Create account</button>
+            </div>
+
+            <div class="login-link">
+                <p>Already have an account? <a th:href="@{/login}">Login here</a></p>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    function showMessage(text, type = 'error') {
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = text;
+        messageDiv.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
+        messageDiv.style.color = type === 'success' ? '#155724' : '#721c24';
+        messageDiv.style.border = type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
+        messageDiv.style.display = 'block';
+
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const userData = {
+            firstName: document.getElementById('first-name').value,
+            middleName: document.getElementById('middle-name').value || null,
+            lastName: document.getElementById('last-name').value,
+            suffix: document.getElementById('suffix').value || null,
+            role: document.getElementById('role').value,
+            department: document.getElementById('department').value,
+            contactNo: document.getElementById('contact-no').value,
+            email: document.getElementById('email').value,
+            address: document.getElementById('address').value,
+            username: document.getElementById('reg-username').value,
+            password: document.getElementById('reg-password').value
+        };
+
+        console.log('Sending registration data:', userData);
+
+        const registerButton = document.getElementById('register-button');
+        const originalText = registerButton.textContent;
+        registerButton.textContent = 'Creating account...';
+        registerButton.disabled = true;
+
+        try {
+            console.log('Attempting to fetch from /api/auth/register');
+
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+
+            console.log('Response received. Status:', response.status);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Registration successful:', result);
+                showMessage('Registration successful! Redirecting to login...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else {
+                const errorText = await response.text();
+                console.error('Registration failed. Status:', response.status, 'Error:', errorText);
+
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    showMessage('Registration failed: ' + (errorJson.error || errorJson.message || errorText));
+                } catch {
+                    showMessage('Registration failed: ' + errorText);
+                }
+            }
+        } catch (error) {
+            console.error('Network error details:', error);
+            console.error('Error name:', error.name);
+            console.error('Error message:', error.message);
+            showMessage('Network error: ' + error.message);
+        } finally {
+            registerButton.textContent = originalText;
+            registerButton.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

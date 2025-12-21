@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPMS - Login</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+<div class="login-container">
+    <div class="form-container">
+        <h3 id="main-header">FPMS Login</h3>
+
+        <!-- Success message from redirect -->
+        <div th:if="${param.registered}" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #c3e6cb;">
+            <strong>Success!</strong> Registration successful. Please login.
+        </div>
+
+        <!-- Logout message -->
+        <div th:if="${param.logout}" class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #c3e6cb;">
+            You have been logged out successfully.
+        </div>
+
+        <!-- Error messages -->
+        <div th:if="${error}" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #f5c6cb;">
+            <strong>Error:</strong> <span th:text="${error}"></span>
+        </div>
+
+        <!-- Login error from query parameter -->
+        <div th:if="${param.error}" class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #f5c6cb;">
+            <strong>Error:</strong> Invalid username or password.
+        </div>
+
+        <!-- Login Form - WITHOUT CSRF TOKEN SINCE IT'S DISABLED -->
+        <form id="loginForm" th:action="@{/login}" method="post" class="login-form">
+            <!-- NO CSRF TOKEN NEEDED - CSRF IS DISABLED IN SECURITYCONFIG -->
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       required
+                       autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       required
+                       autocomplete="current-password">
+            </div>
+
+            <div class="form-group">
+                <button type="submit" id="login-button" class="primary-button">
+                    Sign In
+                </button>
+            </div>
+
+            <div class="register-link">
+                <p>Don't have an account? <a th:href="@{/register}">Register here</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Clear URL parameters after page loads to prevent message from sticking
+    window.addEventListener('load', function() {
+        // Only clear if we have success/error parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('logout') || urlParams.has('registered') || urlParams.has('error')) {
+            // Clear the parameters from the URL without reloading
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+
+    // Simple form submission handler
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        const button = document.getElementById('login-button');
+        button.disabled = true;
+        button.textContent = 'Signing in...';
+
+        // Form will submit normally to /login endpoint
+    });
+</script>
+</body>
+</html>

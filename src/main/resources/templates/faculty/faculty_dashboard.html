@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/faculty.css}">
+</head>
+<body>
+
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <!-- Your existing faculty dashboard content here -->
+        <div class="dashboard-header">
+            <h1>Welcome, <span sec:authentication="name">Faculty Member</span>!</h1>
+            <p>Role: FACULTY</p>
+        </div>
+
+        <div class="dashboard-stats">
+            <div class="stat-card submissions">
+                <h3>My Submissions</h3>
+                <div class="stat-number">8</div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 80%"></div>
+                    </div>
+                    <span class="progress-text">80% Complete</span>
+                </div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Approved:</span>
+                        <span class="detail-value">5</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Pending:</span>
+                        <span class="detail-value">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card awaiting-approval">
+                <h3>Awaiting Approval</h3>
+                <div class="stat-number">3</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Documents:</span>
+                        <span class="detail-value">2</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Portfolio:</span>
+                        <span class="detail-value">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card deadline">
+                <h3>Days to Deadline</h3>
+                <div class="stat-number">7</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Final Deadline:</span>
+                        <span class="detail-value">Mar 15, 2024</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Early Submission:</span>
+                        <span class="detail-value">Mar 10, 2024</span>
+                    </div>
+                </div>
+                <div class="deadline-bar">
+                    <div class="time-left" style="width: 70%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card performance">
+                <h3>Performance Score</h3>
+                <div class="stat-number">92%</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Last Month:</span>
+                        <span class="detail-value">88%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Department Avg:</span>
+                        <span class="detail-value">85%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="recent-activity">
+            <h2 class="section-title">Recent Activity</h2>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon">📄</div>
+                    <div class="activity-details">
+                        <p>Research paper submitted for review</p>
+                        <span class="activity-time">2 hours ago</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">✅</div>
+                    <div class="activity-details">
+                        <p>Teaching portfolio approved by Department Head</p>
+                        <span class="activity-time">1 day ago</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">📋</div>
+                    <div class="activity-details">
+                        <p>Annual report submission completed</p>
+                        <span class="activity-time">2 days ago</span>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon">⏰</div>
+                    <div class="activity-details">
+                        <p>Reminder: Service record update due in 3 days</p>
+                        <span class="activity-time">3 days ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions for Faculty -->
+        <div class="quick-actions">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-cards">
+                <a th:href="@{/my-portfolio}" class="action-card">
+                    <div class="action-icon">📁</div>
+                    <h4>My Portfolio</h4>
+                    <p>View and manage your teaching portfolio</p>
+                </a>
+                <a th:href="@{/submissions}" class="action-card">
+                    <div class="action-icon">📤</div>
+                    <h4>My Submissions</h4>
+                    <p>Track your document submissions</p>
+                </a>
+                <a th:href="@{/documents}" class="action-card">
+                    <div class="action-icon">📄</div>
+                    <h4>Documents</h4>
+                    <p>Manage your research documents</p>
+                </a>
+                <a th:href="@{/calendar}" class="action-card">
+                    <div class="action-icon">📅</div>
+                    <h4>Calendar</h4>
+                    <p>View your schedule and deadlines</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

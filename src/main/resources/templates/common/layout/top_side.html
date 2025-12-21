@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FPMS Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}" />
+
+</head>
+<body>
+<!-- Removed duplicate header -->
+<header>
+    <nav class="navigation">
+        <div class="header">
+            <h3 class="nav-header">FPMS Dashboard</h3>
+        </div>
+
+        <div class="search-bar">
+            <input type="search" placeholder="Search...">
+        </div>
+
+        <div class="notif-profile">
+            <a th:href="@{/notifications}" title="Notifications">
+                <span class="notification-badge">0</span>
+                <img th:src="@{/icons/notification.png}" alt="Notifications" width="28" height="28">
+            </a>
+            <a th:href="@{/profile}" title="Profile">
+                <img th:src="@{/icons/profile.png}" alt="Profile" width="28" height="28">
+            </a>
+        </div>
+    </nav>
+</header>
+
+<div class="main-content">
+    <div class="side-bar">
+        <div class="top-section">
+            <a th:href="@{/dashboard}" title="Dashboard" class="sidebar-link active">
+                <img th:src="@{/icons/dashboard.png}" alt="Dashboard" width="28" height="28">
+            </a>
+            <a th:href="@{/portfolios}" title="Portfolios" class="sidebar-link">
+                <img th:src="@{/icons/portfolios.png}" alt="Portfolios" width="28" height="28">
+            </a>
+            <a th:href="@{/approval}" title="Approval Queue" class="sidebar-link">
+                <img th:src="@{/icons/approval.png}" alt="Approval" width="28" height="28">
+            </a>
+
+            <hr>
+
+            <a th:href="@{/forward-docs}" title="Forward Documents" class="sidebar-link">
+                <img th:src="@{/icons/Forward.png}" alt="Forward" width="28" height="28">
+            </a>
+            <a th:href="@{/department}" title="Department" class="sidebar-link">
+                <img th:src="@{/icons/members.png}" alt="Department" width="28" height="28">
+            </a>
+        </div>
+
+        <div class="bottom-section">
+            <a th:href="@{/bin}" title="Bin" class="sidebar-link">
+                <img th:src="@{/icons/Bin.png}" alt="Bin" width="28" height="28">
+            </a>
+            <a th:href="@{/settings}" title="Settings" class="sidebar-link">
+                <img th:src="@{/icons/settings.png}" alt="Settings" width="28" height="28">
+            </a>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Dynamic content will go here -->
+        <h1>Welcome to FPMS</h1>
+        <p>Select an option from the sidebar to get started.</p>
+    </div>
+</div>
+</body>
+</html>

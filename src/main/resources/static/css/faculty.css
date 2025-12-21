@@ -1,0 +1,237 @@
+/*
+  faculty.css
+  Styles specific to Faculty Dashboard
+  Simple and clean
+*/
+
+/* Dashboard stats */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+/* Stat cards - MATCHING HEAD DASHBOARD SIZE */
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-left: 4px solid;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Card colors */
+.stat-card.submissions {
+  border-left-color: #3b82f6; /* Blue */
+}
+
+.stat-card.awaiting-approval {
+  border-left-color: #10b981; /* Green */
+}
+
+.stat-card.deadline {
+  border-left-color: #ef4444; /* Red */
+}
+
+.stat-card.performance {
+  border-left-color: #8b5cf6; /* Purple */
+}
+
+/* Card content - Adjusted to match head.css */
+.stat-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.stat-number {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 10px 0;
+  color: #2c3e50;
+}
+
+.stat-card.deadline .stat-number {
+  color: #dc3545;
+}
+
+/* Details section - Adjusted to match head.css */
+.stat-details {
+  margin-top: 15px;
+  font-size: 0.9rem;
+}
+
+.detail-item {
+  display: block;
+  color: #666;
+  padding: 3px 0;
+}
+
+.detail-item:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+
+.detail-label {
+  font-weight: 500;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Progress bar - Adjusted to match head.css */
+.progress-container {
+  margin: 15px 0;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 3px;
+}
+
+.progress-text {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 5px;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* Deadline bar - Adjusted to match head.css */
+.deadline-bar {
+  height: 4px;
+  background: #f8d7da;
+  border-radius: 2px;
+  margin-top: 15px;
+  overflow: hidden;
+}
+
+.time-left {
+  height: 100%;
+  background: #dc3545;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Recent activity section */
+.recent-activity {
+  background-color: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-top: 30px;
+}
+
+.recent-activity .section-title {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+/* Activity list */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+  border-color: #4f46e5;
+  background-color: white;
+}
+
+.activity-icon {
+  font-size: 20px;
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  padding: 10px;
+  border-radius: 8px;
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activity-details {
+  flex: 1;
+}
+
+.activity-details p {
+  color: #1f2937;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.activity-time {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .stat-number {
+    font-size: 1.8rem;
+  }
+
+  .recent-activity {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-number {
+    font-size: 1.6rem;
+  }
+
+  .stat-card h3 {
+    font-size: 1rem;
+  }
+
+  .activity-item {
+    padding: 12px;
+  }
+}

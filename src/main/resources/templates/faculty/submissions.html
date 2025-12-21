@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Submissions</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+</head>
+<body>
+
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <h2>My Submissions</h2>
+        <p>Your submission history will appear here.</p>
+    </div>
+</div>
+</body>
+</html>

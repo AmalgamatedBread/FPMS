@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Approval Queue</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/head.css}">
+</head>
+<body>
+
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <h1>Approval Queue</h1>
+        <p>Review and approve pending submissions.</p>
+        <!-- Your approval page content here -->
+    </div>
+</div>
+</body>
+</html>

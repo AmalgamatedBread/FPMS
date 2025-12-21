@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPMS - Department</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/department.css}">
+</head>
+<body>
+
+<!-- Include dynamic header -->
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <!-- Include dynamic sidebar -->
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <div class="department-container">
+            <!-- Error Message -->
+            <div class="error-message" th:if="${error}">
+                <p>⚠️ <strong>Error:</strong> <span th:text="${error}"></span></p>
+            </div>
+
+            <!-- No Department Assignment -->
+            <div class="no-data-message" th:if="${hasDepartment != null && !hasDepartment}">
+                <h3>No Department Assignment</h3>
+                <p>You are not currently assigned to any department. Please contact your administrator.</p>
+                <p><a th:href="@{/assign-department}">Click here to assign yourself to a department</a></p>
+            </div>
+
+            <!-- Department Content (only show if has department) -->
+            <div th:if="${hasDepartment != null && hasDepartment}">
+                <div class="department-header">
+                    <div>
+                        <h2>Department</h2>
+                        <p th:if="${department != null and department.deptName != null}"
+                           th:text="${department.deptName} + ' - University of Eastern Philippines'">
+                        </p>
+                        <p th:unless="${department != null and department.deptName != null}">University of Eastern Philippines</p>
+                    </div>
+
+                    <!-- Show manage button only for Heads/Deans -->
+                    <div th:if="${canManage}">
+                        <button class="btn-manage" onclick="showManageOptions()">Manage Department</button>
+                    </div>
+                </div>
+
+                <!-- View-only message for Faculty -->
+                <div class="view-only-message" th:if="${!canManage}">
+                    <p>👁️ <strong>View Only Mode</strong> - You can view department information but cannot make changes.</p>
+                </div>
+
+                <!-- Department Information -->
+                <div class="department-info" th:if="${department != null}">
+                    <h3 class="college-title" th:text="${department.deptName}"></h3>
+                    <p class="university-title">University of Eastern Philippines</p>
+
+                    <div class="department-details">
+                        <p th:if="${department.officeLocation != null and !department.officeLocation.isEmpty()}">
+                            <strong>Office Location:</strong>
+                            <span th:text="${department.officeLocation}"></span>
+                        </p>
+                        <p th:if="${department.description != null and !department.description.isEmpty()}">
+                            <strong>Description:</strong>
+                            <span th:text="${department.description}"></span>
+                        </p>
+                        <p th:if="${department.deptCode != null}">
+                            <strong>Department Code:</strong>
+                            <span th:text="${department.deptCode}"></span>
+                        </p>
+                        <p th:if="${department.createdAt != null}">
+                            <strong>Created:</strong>
+                            <span th:text="${#temporals.format(department.createdAt, 'MMMM dd, yyyy')}"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Leadership Section -->
+                <div th:if="${leadership != null}">
+                    <h3>Department Leadership</h3>
+                    <div class="leadership-cards">
+                        <!-- Dean Card - SAFER SYNTAX with map access -->
+                        <div class="leadership-card dean"
+                             th:if="${leadership != null and leadership['dean'] != null and leadership['dean']['fullName'] != null}">
+                            <div class="role-badge dean">DEAN</div>
+                            <div class="faculty-avatar"
+                                 th:style="${leadership['dean']['avatarColor'] != null} ? 'background-color: ' + ${leadership['dean']['avatarColor']} : 'background-color: #4f46e5'">
+                                <span th:text="${leadership['dean']['avatarInitial']} ?: 'D'"></span>
+                            </div>
+                            <h4 th:text="${leadership['dean']['fullName']}"></h4>
+                            <p>Dean</p>
+                            <p th:if="${leadership['dean']['email'] != null and !leadership['dean']['email'].isEmpty()}">
+                                <strong>Email:</strong>
+                                <a th:href="'mailto:' + ${leadership['dean']['email']}" th:text="${leadership['dean']['email']}"></a>
+                            </p>
+                            <p th:if="${leadership['dean']['telNo'] != null and !leadership['dean']['telNo'].isEmpty()}">
+                                <strong>Phone:</strong>
+                                <span th:text="${leadership['dean']['telNo']}"></span>
+                            </p>
+
+                            <!-- Action buttons only for Heads/Deans -->
+                            <div class="action-buttons" th:if="${canManage}">
+                                <button class="btn-manage contact-btn"
+                                        th:data-email="${leadership['dean']['email']}"
+                                        onclick="contactPerson(this.getAttribute('data-email'))">
+                                    Contact
+                                </button>
+                                <button class="btn-manage schedule-btn"
+                                        th:data-person="${leadership['dean']['fullName']}"
+                                        onclick="scheduleMeeting(this.getAttribute('data-person'))">
+                                    Schedule Meeting
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Department Head Card - SAFER SYNTAX -->
+                        <div class="leadership-card head"
+                             th:if="${leadership != null and leadership['departmentHead'] != null and leadership['departmentHead']['fullName'] != null}">
+                            <div class="role-badge head">DEPARTMENT HEAD</div>
+                            <div class="faculty-avatar"
+                                 th:style="${leadership['departmentHead']['avatarColor'] != null} ? 'background-color: ' + ${leadership['departmentHead']['avatarColor']} : 'background-color: #059669'">
+                                <span th:text="${leadership['departmentHead']['avatarInitial']} ?: 'H'"></span>
+                            </div>
+                            <h4 th:text="${leadership['departmentHead']['fullName']}"></h4>
+                            <p>Department Head</p>
+                            <p th:if="${leadership['departmentHead']['email'] != null and !leadership['departmentHead']['email'].isEmpty()}">
+                                <strong>Email:</strong>
+                                <a th:href="'mailto:' + ${leadership['departmentHead']['email']}" th:text="${leadership['departmentHead']['email']}"></a>
+                            </p>
+                            <p th:if="${leadership['departmentHead']['telNo'] != null and !leadership['departmentHead']['telNo'].isEmpty()}">
+                                <strong>Phone:</strong>
+                                <span th:text="${leadership['departmentHead']['telNo']}"></span>
+                            </p>
+
+                            <!-- Action buttons only for Heads/Deans -->
+                            <div class="action-buttons" th:if="${canManage}">
+                                <button class="btn-manage contact-btn"
+                                        th:data-email="${leadership['departmentHead']['email']}"
+                                        onclick="contactPerson(this.getAttribute('data-email'))">
+                                    Contact
+                                </button>
+                                <button class="btn-manage report-btn"
+                                        th:data-person="${leadership['departmentHead']['fullName']}"
+                                        onclick="reportToPerson(this.getAttribute('data-person'))">
+                                    Report To
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Chairperson Card - SAFER SYNTAX -->
+                        <div class="leadership-card head"
+                             th:if="${leadership != null and leadership['chairperson'] != null and leadership['chairperson']['fullName'] != null}">
+                            <div class="role-badge head">CHAIRPERSON</div>
+                            <div class="faculty-avatar"
+                                 th:style="${leadership['chairperson']['avatarColor'] != null} ? 'background-color: ' + ${leadership['chairperson']['avatarColor']} : 'background-color: #10b981'">
+                                <span th:text="${leadership['chairperson']['avatarInitial']} ?: 'C'"></span>
+                            </div>
+                            <h4 th:text="${leadership['chairperson']['fullName']}"></h4>
+                            <p>Department Chairperson</p>
+                            <p th:if="${leadership['chairperson']['email'] != null and !leadership['chairperson']['email'].isEmpty()}">
+                                <strong>Email:</strong>
+                                <a th:href="'mailto:' + ${leadership['chairperson']['email']}" th:text="${leadership['chairperson']['email']}"></a>
+                            </p>
+                            <p th:if="${leadership['chairperson']['telNo'] != null and !leadership['chairperson']['telNo'].isEmpty()}">
+                                <strong>Phone:</strong>
+                                <span th:text="${leadership['chairperson']['telNo']}"></span>
+                            </p>
+                        </div>
+
+                        <!-- No Leadership Message -->
+                        <div class="no-data-message"
+                             th:if="${(leadership['dean'] == null or leadership['dean']['fullName'] == null) and
+                                     (leadership['departmentHead'] == null or leadership['departmentHead']['fullName'] == null) and
+                                     (leadership['chairperson'] == null or leadership['chairperson']['fullName'] == null)}">
+                            <p>No leadership positions have been assigned to this department yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Faculty Members Section -->
+                <div class="faculty-members" th:if="${facultyMembers != null}">
+                    <div class="section-header">
+                        <h3>Faculty Members</h3>
+                        <p th:if="${stats != null}">
+                            Total: <strong th:text="${stats.totalFaculty}"></strong>
+                            faculty members
+                            <span th:if="${stats.regularFacultyCount != null and stats.regularFacultyCount > 0}">
+                                (<span th:text="${stats.regularFacultyCount}"></span> regular faculty)
+                            </span>
+                        </p>
+                    </div>
+
+                    <!-- Faculty Grid -->
+                    <div class="faculty-grid" th:if="${facultyMembers != null and !facultyMembers.isEmpty()}">
+                        <!-- Faculty Member Card -->
+                        <div class="faculty-card" th:each="faculty : ${facultyMembers}">
+                            <div class="faculty-avatar"
+                                 th:style="${faculty.avatarColor != null} ? 'background-color: ' + ${faculty.avatarColor} : 'background-color: #4f46e5'">
+                                <span th:text="${faculty.avatarInitial != null ? faculty.avatarInitial : 'U'}"
+                                      style="color: white;"></span>
+                            </div>
+                            <h4 th:text="${faculty.fullName != null ? faculty.fullName : 'Unknown Faculty'}"></h4>
+                            <p class="faculty-role">
+                                <span th:if="${faculty.role == 'FACULTY'}">Faculty Member</span>
+                                <span th:if="${faculty.role == 'DEPT_HEAD'}">Department Head</span>
+                                <span th:if="${faculty.role == 'DEAN'}">Dean</span>
+                                <span th:if="${faculty.role == null}">Unknown Role</span>
+                            </p>
+                            <p th:if="${faculty.email != null and !faculty.email.isEmpty()}">
+                                <strong>Email:</strong>
+                                <a th:href="'mailto:' + ${faculty.email}" th:text="${faculty.email}"></a>
+                            </p>
+                            <p th:if="${faculty.telNo != null and !faculty.telNo.isEmpty()}">
+                                <strong>Phone:</strong>
+                                <span th:text="${faculty.telNo}"></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- No Faculty Members Message -->
+                    <div class="no-data-message" th:if="${facultyMembers == null or facultyMembers.isEmpty()}">
+                        <p>No faculty members are currently assigned to this department.</p>
+                    </div>
+
+                    <!-- Manage faculty button only for Heads/Deans -->
+                    <div class="action-buttons" th:if="${canManage}" style="justify-content: flex-start; margin-top: 30px;">
+                        <button class="btn-manage" onclick="addNewFaculty()">Add New Faculty</button>
+                        <button class="btn-manage" onclick="editFacultyList()">Edit Faculty List</button>
+                        <button class="btn-manage" onclick="generateReport()">Generate Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include JavaScript -->
+<script th:src="@{/js/department.js}"></script>
+</body>
+</html>

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPMS - Profile</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/profile.css}">
+
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.5rem;
+        }
+
+        .modal-header .close {
+            color: #6b7280;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .modal-header .close:hover {
+            color: #dc3545;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-cancel {
+            background: #f8fafc;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .btn-cancel:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-save {
+            background: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .btn-save:hover {
+            background: #4338ca;
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        #toast.success {
+            background-color: #10b981;
+        }
+
+        #toast.error {
+            background-color: #ef4444;
+        }
+
+        #toast.warning {
+            background-color: #f59e0b;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
+        .error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Photo Upload Preview */
+        .photo-preview {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .photo-preview img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e5e7eb;
+        }
+
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Test button */
+        .btn-test {
+            background: #f59e0b;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-left: 10px;
+        }
+
+        .btn-test:hover {
+            background: #d97706;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- Include dynamic header -->
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <!-- Include dynamic sidebar -->
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <div class="profile-container">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <img id="profileAvatar"
+                         th:src="@{/icons/profile.png}"
+                         alt="Profile Picture"
+                         class="avatar"
+                         onerror="this.onerror=null; this.src='/icons/profile.png';">
+                    <button class="edit-avatar-btn" id="changePhotoBtn">Change Photo</button>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name">
+                        <span id="first-name-display">First</span>
+                        <span id="middle-name-display"></span>
+                        <span id="last-name-display">Last</span>
+                        <span id="suffix-display"></span>
+                    </h1>
+                    <p class="profile-role" id="role-display">Role</p>
+                    <p class="profile-dept" id="department-display">Department</p>
+                    <p class="profile-email" id="email-display">Email</p>
+                </div>
+            </div>
+
+            <!-- Personal Information Section -->
+            <div class="profile-section">
+                <h2 class="section-title">Personal Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Employee ID</span>
+                        <span class="info-value" id="employee-id-display">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Username</span>
+                        <span class="info-value" id="username-display">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone Number</span>
+                        <span class="info-value" id="phone-display">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email Address</span>
+                        <span class="info-value" id="email-value-display">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Address</span>
+                        <span class="info-value" id="address-display">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Role</span>
+                        <span class="info-value" id="role-value-display">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Actions -->
+            <div class="profile-actions">
+                <button class="btn btn-edit" id="editProfileBtn">Edit Profile</button>
+                <button class="btn btn-change-password" id="changePasswordBtn">Change Password</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Profile</h2>
+            <span class="close" onclick="closeEditModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                    <div class="error" id="firstNameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="middleName">Middle Name</label>
+                    <input type="text" id="middleName" name="middleName">
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                    <div class="error" id="lastNameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="suffix">Suffix</label>
+                    <input type="text" id="suffix" name="suffix" placeholder="Leave empty to remove suffix">
+                </div>
+                <div class="form-group">
+                    <label for="contactNo">Phone Number</label>
+                    <input type="text" id="contactNo" name="contactNo">
+                </div>
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Change Password</h2>
+            <span class="close" onclick="closePasswordModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="currentPassword">Current Password *</label>
+                    <input type="password" id="currentPassword" name="currentPassword" required>
+                    <div class="error" id="currentPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password *</label>
+                    <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                    <small>Minimum 6 characters</small>
+                    <div class="error" id="newPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <div class="error" id="confirmPasswordError"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Photo Modal -->
+<div id="uploadPhotoModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Upload Profile Photo</h2>
+            <span class="close" onclick="closePhotoModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="photo-preview">
+                <img id="photoPreview" src="" alt="Preview" style="display: none;">
+            </div>
+            <form id="uploadPhotoForm">
+                <div class="form-group">
+                    <label for="profilePhoto">Select Photo</label>
+                    <div class="file-input-container">
+                        <button type="button" class="btn btn-cancel" style="width: 100%;">
+                            Choose File
+                        </button>
+                        <input type="file" id="profilePhoto" name="file" accept="image/*" class="file-input">
+                    </div>
+                    <small>Max file size: 5MB. Allowed: JPG, PNG, GIF</small>
+                    <div class="error" id="photoError"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closePhotoModal()">Cancel</button>
+                    <button type="submit" class="btn btn-save">Upload Photo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<script>
+    // Global variables
+    let currentUser = null;
+
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Profile page loaded');
+
+        // Load profile data
+        loadProfileData();
+
+        // Set up event listeners
+        document.getElementById('editProfileBtn').addEventListener('click', showEditModal);
+        document.getElementById('changePasswordBtn').addEventListener('click', showPasswordModal);
+        document.getElementById('changePhotoBtn').addEventListener('click', showPhotoModal);
+        document.getElementById('editProfileForm').addEventListener('submit', handleEditProfile);
+        document.getElementById('changePasswordForm').addEventListener('submit', handleChangePassword);
+        document.getElementById('uploadPhotoForm').addEventListener('submit', handleUploadPhoto);
+        document.getElementById('profilePhoto').addEventListener('change', previewPhoto);
+
+        // Close modals on outside click
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('editProfileModal')) closeEditModal();
+            if (event.target === document.getElementById('changePasswordModal')) closePasswordModal();
+            if (event.target === document.getElementById('uploadPhotoModal')) closePhotoModal();
+        });
+
+        // Test after a short delay
+        setTimeout(testProfilePhoto, 1000);
+    });
+
+    // Load profile data from API
+    async function loadProfileData() {
+        showLoading();
+
+        try {
+            const response = await fetch('/api/profile/me', {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Profile data:', result);
+
+                if (result.success && result.user) {
+                    currentUser = result.user;
+                    updateProfileDisplay(result.user);
+                } else {
+                    showToast(result.error || 'Failed to load profile', 'error');
+                }
+            } else {
+                const errorText = await response.text();
+                showToast('Server error: ' + response.status, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Network error: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Update profile display
+    function updateProfileDisplay(user) {
+        console.log('Updating display:', user);
+
+        // Name
+        document.getElementById('first-name-display').textContent = user.firstName || 'Not set';
+        document.getElementById('last-name-display').textContent = user.lastName || 'Not set';
+
+        // Middle name
+        const middleNameEl = document.getElementById('middle-name-display');
+        if (user.middleName && user.middleName.trim() !== '') {
+            middleNameEl.textContent = ' ' + user.middleName;
+            middleNameEl.style.display = 'inline';
+        } else {
+            middleNameEl.style.display = 'none';
+            middleNameEl.textContent = '';
+        }
+
+        // Suffix
+        const suffixEl = document.getElementById('suffix-display');
+        if (user.suffix && user.suffix.trim() !== '') {
+            suffixEl.textContent = ' ' + user.suffix;
+            suffixEl.style.display = 'inline';
+        } else {
+            suffixEl.style.display = 'none';
+            suffixEl.textContent = '';
+        }
+
+        // Other fields
+        document.getElementById('role-display').textContent = user.role || 'Not set';
+        document.getElementById('department-display').textContent = user.departmentName || 'Not assigned';
+        document.getElementById('email-display').textContent = user.email || 'Not set';
+        document.getElementById('email-value-display').textContent = user.email || 'Not set';
+        document.getElementById('phone-display').textContent = user.contactNo || 'Not set';
+        document.getElementById('address-display').textContent = user.address || 'Not set';
+        document.getElementById('role-value-display').textContent = user.role || 'Not set';
+        document.getElementById('employee-id-display').textContent = 'EMP-' + (user.id || '000');
+        document.getElementById('username-display').textContent = user.username || 'Not set';
+
+        // Profile photo - ADD TIMESTAMP to prevent caching
+        if (user.profilePhoto) {
+            const avatar = document.getElementById('profileAvatar');
+            const timestamp = new Date().getTime();
+            avatar.src = user.profilePhoto + '?t=' + timestamp;
+            console.log('Setting avatar src:', avatar.src);
+        }
+    }
+
+    // Modal functions
+    function showEditModal() {
+        if (currentUser) {
+            document.getElementById('firstName').value = currentUser.firstName || '';
+            document.getElementById('middleName').value = currentUser.middleName || '';
+            document.getElementById('lastName').value = currentUser.lastName || '';
+            document.getElementById('suffix').value = currentUser.suffix || '';
+            document.getElementById('contactNo').value = currentUser.contactNo || '';
+            document.getElementById('address').value = currentUser.address || '';
+        }
+        document.getElementById('editProfileModal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editProfileModal').style.display = 'none';
+        clearErrors('editProfileForm');
+    }
+
+    function showPasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'block';
+    }
+
+    function closePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'none';
+        clearErrors('changePasswordForm');
+        document.getElementById('changePasswordForm').reset();
+    }
+
+    function showPhotoModal() {
+        document.getElementById('uploadPhotoModal').style.display = 'block';
+    }
+
+    function closePhotoModal() {
+        document.getElementById('uploadPhotoModal').style.display = 'none';
+        clearErrors('uploadPhotoForm');
+        document.getElementById('profilePhoto').value = '';
+        document.getElementById('photoPreview').style.display = 'none';
+    }
+
+    // Handle edit profile form
+    async function handleEditProfile(e) {
+        e.preventDefault();
+
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+
+        if (!firstName || !lastName) {
+            showToast('First and last name are required', 'error');
+            return;
+        }
+
+        const suffixInput = document.getElementById('suffix').value.trim();
+
+        const formData = {
+            firstName: firstName,
+            middleName: document.getElementById('middleName').value.trim() || null,
+            lastName: lastName,
+            suffix: suffixInput === '' ? null : suffixInput,
+            contactNo: document.getElementById('contactNo').value.trim() || null,
+            address: document.getElementById('address').value.trim() || null
+        };
+
+        showLoading();
+
+        try {
+            const response = await fetch('/api/profile/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                if (result.user) {
+                    currentUser = { ...currentUser, ...result.user };
+                    updateProfileDisplay(currentUser);
+                }
+                closeEditModal();
+                showToast('Profile updated successfully', 'success');
+            } else {
+                showToast(result.error || 'Failed to update profile', 'error');
+            }
+        } catch (error) {
+            showToast('Network error: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Handle change password form
+    async function handleChangePassword(e) {
+        e.preventDefault();
+
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showToast('All fields are required', 'error');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            showToast('New password must be at least 6 characters', 'error');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showToast('New passwords do not match', 'error');
+            return;
+        }
+
+        const formData = {
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        };
+
+        showLoading();
+
+        try {
+            const response = await fetch('/api/profile/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                closePasswordModal();
+                showToast('Password changed successfully', 'success');
+            } else {
+                showToast(result.error || 'Failed to change password', 'error');
+            }
+        } catch (error) {
+            showToast('Network error: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Handle photo upload
+    async function handleUploadPhoto(e) {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('profilePhoto');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            showToast('Please select a file', 'error');
+            return;
+        }
+
+        console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File size must be less than 5MB', 'error');
+            return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            showToast('Only JPG, PNG, and GIF files are allowed', 'error');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showLoading();
+
+        try {
+            const response = await fetch('/api/profile/upload-photo', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+
+            const result = await response.json();
+            console.log('Upload response:', result);
+
+            if (response.ok && result.success) {
+                closePhotoModal();
+
+                // FORCE RELOAD with timestamp
+                if (result.photoUrl) {
+                    const avatar = document.getElementById('profileAvatar');
+                    const timestamp = new Date().getTime();
+                    avatar.src = result.photoUrl + '?t=' + timestamp;
+                    console.log('Updated avatar to:', avatar.src);
+                }
+
+                showToast('Profile photo uploaded successfully', 'success');
+
+                // Force reload profile data
+                setTimeout(() => {
+                    loadProfileData();
+                    location.reload(); // Full page reload to clear cache
+                }, 1000);
+            } else {
+                showToast(result.error || 'Failed to upload photo', 'error');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            showToast('Network error: ' + error.message, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Preview selected photo
+    function previewPhoto() {
+        const fileInput = document.getElementById('profilePhoto');
+        const preview = document.getElementById('photoPreview');
+
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    }
+
+
+    // Helper functions
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type;
+        toast.style.display = 'block';
+
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
+    function clearErrors(formId) {
+        const form = document.getElementById(formId);
+        const errors = form.querySelectorAll('.error');
+        errors.forEach(error => {
+            error.textContent = '';
+            error.style.display = 'none';
+        });
+    }
+
+</script>
+</body>
+</html>

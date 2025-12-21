@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Head Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/head.css}">
+</head>
+<body>
+
+<!-- Include dynamic header -->
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <!-- Include dynamic sidebar -->
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <div class="dashboard-header">
+            <h1>Welcome, Department Head <span sec:authentication="name"></span>!</h1>
+            <p>Role: DEPARTMENT HEAD</p>
+        </div>
+
+        <div class="dashboard-stats">
+            <div class="stat-card awaiting-review">
+                <h3>Awaiting Review</h3>
+                <div class="stat-number">0</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Portfolios:</span>
+                        <span class="detail-value">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Documents:</span>
+                        <span class="detail-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card awaiting-approval">
+                <h3>Awaiting Approvals</h3>
+                <div class="stat-number">0</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Forwarded:</span>
+                        <span class="detail-value">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Pending:</span>
+                        <span class="detail-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card submissions">
+                <h3>Department Submissions</h3>
+                <div class="stat-number">0</div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text">0% Complete</span>
+                </div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">On time:</span>
+                        <span class="detail-value">0</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Late:</span>
+                        <span class="detail-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card deadline">
+                <h3>Days Remaining</h3>
+                <div class="stat-number deadline-count">14</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Deadline:</span>
+                        <span class="detail-value">Mar 15, 2024</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Cut-off:</span>
+                        <span class="detail-value">Mar 10, 2024</span>
+                    </div>
+                </div>
+                <div class="deadline-bar">
+                    <div class="time-left" style="width: 50%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions for Department Head -->
+        <div class="quick-actions">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-cards">
+                <a th:href="@{/approval}" class="action-card">
+                    <div class="action-icon">✅</div>
+                    <h4>Approval Queue</h4>
+                    <p>Review faculty submissions and approvals</p>
+                </a>
+                <a th:href="@{/portfolios}" class="action-card">
+                    <div class="action-icon">📚</div>
+                    <h4>Portfolios</h4>
+                    <p>Manage department portfolios</p>
+                </a>
+                <a th:href="@{/forward-docs}" class="action-card">
+                    <div class="action-icon">📤</div>
+                    <h4>Forward Documents</h4>
+                    <p>Forward documents to higher authorities</p>
+                </a>
+                <a th:href="@{/department}" class="action-card">
+                    <div class="action-icon">👥</div>
+                    <h4>Department</h4>
+                    <p>Manage faculty members</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

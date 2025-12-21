@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dean Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/dean.css}">
+</head>
+<body>
+
+<!-- Include dynamic header -->
+<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+
+<div class="main-content">
+    <!-- Include dynamic sidebar -->
+    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+
+    <div class="content">
+        <div class="dashboard-header">
+            <h1>Welcome, Dean <span sec:authentication="name"></span>!</h1>
+            <p>Role: DEAN</p>
+        </div>
+
+        <div class="dashboard-stats">
+            <div class="stat-card awaiting-approval">
+                <h3>Pending Approvals</h3>
+                <div class="stat-number">18</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">From Departments:</span>
+                        <span class="detail-value">12</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">From Heads:</span>
+                        <span class="detail-value">6</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card faculty">
+                <h3>Total Faculty</h3>
+                <div class="stat-number">125</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Active:</span>
+                        <span class="detail-value">118</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">On Leave:</span>
+                        <span class="detail-value">7</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card submissions">
+                <h3>Departments</h3>
+                <div class="stat-number">8</div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%"></div>
+                    </div>
+                    <span class="progress-text">6/8 Active</span>
+                </div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Complete Submissions:</span>
+                        <span class="detail-value">6</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Pending:</span>
+                        <span class="detail-value">2</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card performance">
+                <h3>Monthly Processed</h3>
+                <div class="stat-number">42</div>
+                <div class="stat-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Approvals:</span>
+                        <span class="detail-value">42</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Avg. Time:</span>
+                        <span class="detail-value">2.3 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="quick-actions">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-cards">
+                <a th:href="@{/portfolios}" class="action-card">
+                    <div class="action-icon">📚</div>
+                    <h4>All Portfolios</h4>
+                    <p>View college-wide portfolios</p>
+                </a>
+                <a th:href="@{/approval}" class="action-card">
+                    <div class="action-icon">✅</div>
+                    <h4>Final Approvals</h4>
+                    <p>Review forwarded documents</p>
+                </a>
+                <a th:href="@{/forward-docs}" class="action-card">
+                    <div class="action-icon">📋</div>
+                    <h4>Documents</h4>
+                    <p>Manage college documents</p>
+                </a>
+                <a th:href="@{/department}" class="action-card">
+                    <div class="action-icon">🏛️</div>
+                    <h4>Departments</h4>
+                    <p>View all departments</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

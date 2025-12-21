@@ -1,0 +1,136 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: sans-serif, Arial;
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-container {
+  width: 100%;
+  max-height: 700px;
+  max-width: 450px;
+}
+
+#main-header {
+  font-size: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.personal-information {
+  padding: 10px;
+}
+
+.identity {
+  padding-bottom: 20px;
+  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-bottom: 1px solid lightgrey;
+}
+
+.role-department {
+  padding-top: 20px;
+  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.contact {
+  padding-top: 20px;
+  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.address {
+  padding-bottom: 20px;
+  border-bottom: 1px solid lightgrey;
+}
+
+.account-information {
+  padding-top: 10px;
+  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.form-group label {
+  color: #333;
+  display: block;
+  font-size: 14px;
+}
+
+.form-group input,
+select,
+textarea {
+  height: 40px;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid lightgrey;
+}
+
+#suffix {
+  width: 30%;
+}
+
+#address {
+  height: 10vh;
+  width: 100%;
+  resize: none;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.buttons button {
+  height: 40px;
+  width: 40%;
+  padding: 10px;
+  font-size: 16px;
+  background-color: white;
+  border-radius: 5px;
+  border: 1px solid lightgrey;
+  transition: all 0.3s ease-in-out;
+}
+
+.buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 0px 3px lightgrey;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid lightgrey;
+}
+
+.login-link p {
+  font-size: 14px;
+}
+
+.login-link a {
+  font-size: 14px;
+  color: blue;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}

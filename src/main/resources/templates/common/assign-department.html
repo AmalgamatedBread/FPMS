@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!-- create file: src/main/resources/templates/common/assign-department.html -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Assign Department</title>
+</head>
+<body>
+<div style="max-width: 500px; margin: 50px auto; padding: 20px;">
+    <h2>Select Your Department</h2>
+    <p>You need to be assigned to a department to access department features.</p>
+
+    <select id="departmentSelect" style="width: 100%; padding: 10px; margin: 10px 0;">
+        <option value="">Select Department</option>
+        <option value="BIO">Biology</option>
+        <option value="ENV">Environmental Science</option>
+        <option value="IT">Information Technology</option>
+        <option value="MB">Marine Biology</option>
+        <option value="MATH">Mathematics</option>
+    </select>
+
+    <button onclick="assignDepartment()" style="width: 100%; padding: 10px; background: #4f46e5; color: white; border: none;">
+        Assign Department
+    </button>
+
+    <div id="message" style="margin-top: 20px;"></div>
+</div>
+
+<script>
+    function assignDepartment() {
+        const deptCode = document.getElementById('departmentSelect').value;
+        if (!deptCode) {
+            alert('Please select a department');
+            return;
+        }
+
+        fetch('/api/departments/assign-to-department', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ deptCode: deptCode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('message').innerHTML =
+                    `<p style="color: green;">Success! ${data.message}</p>`;
+                setTimeout(() => {
+                    window.location.href = '/department';
+                }, 2000);
+            } else {
+                document.getElementById('message').innerHTML =
+                    `<p style="color: red;">Error: ${data.error}</p>`;
+            }
+        })
+        .catch(error => {
+            document.getElementById('message').innerHTML =
+                `<p style="color: red;">Error: ${error.message}</p>`;
+        });
+    }
+</script>
+</body>
+</html>
