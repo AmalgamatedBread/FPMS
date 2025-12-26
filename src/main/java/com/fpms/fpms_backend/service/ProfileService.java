@@ -34,11 +34,10 @@ public class ProfileService {
     private final SystemCredentialsRepository credentialsRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserContextService userContextService;
-    private final AuthService authService;
 
-    // Get upload directory from application.properties or use default
+    // Injected from application.properties
     @Value("${file.upload-dir:uploads}")
-    private String UPLOAD_BASE_DIR;
+    private String uploadBaseDir;
 
     @Transactional
     public ResponseEntity<?> updateProfile(Long userId, ProfileUpdateRequest request) {
@@ -58,7 +57,7 @@ public class ProfileService {
                 faculty.setLastName(request.getLastName().trim());
             }
 
-            // FIX: Proper suffix handling - set to null if empty
+            // Proper suffix handling
             if (request.getSuffix() != null) {
                 String suffix = request.getSuffix().trim();
                 faculty.setSuffix(suffix.isEmpty() ? null : suffix);
@@ -168,9 +167,9 @@ public class ProfileService {
                 departmentName = faculty.getDepartment().getDeptName();
             }
 
-            // Get profile photo URL with detailed logging
+            // Get profile photo URL
             String profilePhoto = getProfilePhotoUrl(userId);
-            log.info("Profile photo URL for user {}: {}", userId, profilePhoto);
+            log.debug("Profile photo URL for user {}: {}", userId, profilePhoto);
 
             // Use HashMap for user data
             Map<String, Object> userMap = new HashMap<>();
@@ -188,8 +187,6 @@ public class ProfileService {
             userMap.put("createdAt", faculty.getCreatedAt());
             userMap.put("updatedAt", faculty.getUpdatedAt());
             userMap.put("profilePhoto", profilePhoto);
-
-            log.info("Returning profile data for user {}: {}", userId, userMap);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -257,14 +254,14 @@ public class ProfileService {
                 return ResponseEntity.badRequest().body(Map.of("error", "Only JPEG, PNG, and GIF images are allowed"));
             }
 
-            // Get user's profile photos directory
+            // Get user's profile photos directory using consistent path
             String userProfileDir = getUserProfilePhotosDirectory(userId);
 
             // DEBUG: Show where we're trying to save
             log.info("Attempting to save to directory: {}", userProfileDir);
 
-            Path uploadPath = Paths.get(userProfileDir);
-            log.info("Absolute path: {}", uploadPath.toAbsolutePath());
+            Path uploadPath = Paths.get(userProfileDir).toAbsolutePath().normalize();
+            log.info("Absolute normalized path: {}", uploadPath);
 
             // Create directories if they don't exist
             Files.createDirectories(uploadPath);
@@ -279,11 +276,14 @@ public class ProfileService {
 
             // Save file
             long bytesWritten = Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Profile photo saved: {} ({} bytes)", filePath.toAbsolutePath(), bytesWritten);
+            log.info("Profile photo saved: {} ({} bytes)", filePath, bytesWritten);
 
             // Get the URL for the uploaded file
             String photoUrl = "/uploads/users/" + userId + "/profile-photos/" + filename;
             log.info("Profile photo URL: {}", photoUrl);
+
+            // Clean up old photos (keep only the 5 most recent)
+            cleanupOldProfilePhotos(userId, 5);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -300,10 +300,12 @@ public class ProfileService {
     }
 
     /**
-     * Get user's profile photos directory
+     * Get user's profile photos directory using consistent base directory
      */
     public String getUserProfilePhotosDirectory(Long userId) {
-        return UPLOAD_BASE_DIR + "/users/" + userId + "/profile-photos/";
+        // Ensure consistent path format
+        String baseDir = uploadBaseDir.endsWith("/") ? uploadBaseDir : uploadBaseDir + "/";
+        return baseDir + "users/" + userId + "/profile-photos/";
     }
 
     /**
@@ -312,12 +314,12 @@ public class ProfileService {
     private String getProfilePhotoUrl(Long userId) {
         try {
             String userProfileDir = getUserProfilePhotosDirectory(userId);
-            Path uploadPath = Paths.get(userProfileDir);
+            Path uploadPath = Paths.get(userProfileDir).toAbsolutePath().normalize();
 
-            log.info("Looking for profile photos for user {} at: {}", userId, uploadPath.toAbsolutePath());
+            log.debug("Looking for profile photos for user {} at: {}", userId, uploadPath);
 
             if (!Files.exists(uploadPath)) {
-                log.info("Directory does not exist for user {}", userId);
+                log.debug("Directory does not exist for user {}", userId);
                 return "/icons/profile.png";
             }
 
@@ -330,7 +332,7 @@ public class ProfileService {
                     })
                     .collect(Collectors.toList());
 
-            log.info("Found {} image files for user {}", imageFiles.size(), userId);
+            log.debug("Found {} image files for user {}", imageFiles.size(), userId);
 
             if (!imageFiles.isEmpty()) {
                 // Get the most recent file
@@ -347,18 +349,16 @@ public class ProfileService {
                 if (latestFile != null) {
                     String filename = latestFile.getFileName().toString();
                     String photoUrl = "/uploads/users/" + userId + "/profile-photos/" + filename;
-                    log.info("Selected profile photo: {}", photoUrl);
+                    log.debug("Selected profile photo: {}", photoUrl);
 
                     // Verify file exists and is readable
                     if (Files.exists(latestFile) && Files.isReadable(latestFile)) {
-                        long fileSize = Files.size(latestFile);
-                        log.info("File verified - size: {} bytes", fileSize);
                         return photoUrl;
                     }
                 }
             }
 
-            log.info("No valid profile photo found, using default");
+            log.debug("No valid profile photo found, using default");
             return "/icons/profile.png";
 
         } catch (Exception e) {
@@ -368,20 +368,19 @@ public class ProfileService {
     }
 
     /**
-     * Delete old profile photos for a user (keep only the latest)
+     * Clean up old profile photos (keep only the most recent N)
      */
-    @Transactional
-    public ResponseEntity<?> cleanupProfilePhotos(Long userId) {
+    private void cleanupOldProfilePhotos(Long userId, int keepCount) {
         try {
             String userProfileDir = getUserProfilePhotosDirectory(userId);
-            Path uploadPath = Paths.get(userProfileDir);
+            Path uploadPath = Paths.get(userProfileDir).toAbsolutePath().normalize();
 
             if (!Files.exists(uploadPath)) {
-                return ResponseEntity.ok(Map.of("success", true, "message", "No photos to clean up"));
+                return;
             }
 
             // Get all profile photos sorted by modification time (newest first)
-            var photos = Files.list(uploadPath)
+            List<Path> photos = Files.list(uploadPath)
                     .filter(path -> path.getFileName().toString().startsWith("profile_"))
                     .sorted((p1, p2) -> {
                         try {
@@ -390,24 +389,53 @@ public class ProfileService {
                             return 0;
                         }
                     })
-                    .toList();
+                    .collect(Collectors.toList());
 
-            // Delete all except the most recent one
-            int deletedCount = 0;
-            for (int i = 1; i < photos.size(); i++) {
+            // Delete old photos beyond keepCount
+            for (int i = keepCount; i < photos.size(); i++) {
                 try {
                     Files.delete(photos.get(i));
-                    deletedCount++;
+                    log.debug("Deleted old profile photo: {}", photos.get(i).getFileName());
                 } catch (IOException e) {
                     log.error("Failed to delete old photo: {}", photos.get(i).getFileName(), e);
                 }
             }
 
+        } catch (IOException e) {
+            log.error("Error cleaning up old profile photos: ", e);
+        }
+    }
+
+    /**
+     * Delete old profile photos for a user (public API method)
+     */
+    @Transactional
+    public ResponseEntity<?> cleanupProfilePhotos(Long userId) {
+        try {
+            String userProfileDir = getUserProfilePhotosDirectory(userId);
+            Path uploadPath = Paths.get(userProfileDir).toAbsolutePath().normalize();
+
+            if (!Files.exists(uploadPath)) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "No photos to clean up"));
+            }
+
+            // Get all profile photos
+            List<Path> photos = Files.list(uploadPath)
+                    .filter(path -> path.getFileName().toString().startsWith("profile_"))
+                    .collect(Collectors.toList());
+
+            int beforeCount = photos.size();
+
+            // Clean up keeping only 5 most recent
+            cleanupOldProfilePhotos(userId, 5);
+
+            int afterCount = Math.min(beforeCount, 5);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "Cleaned up " + deletedCount + " old profile photos");
-            response.put("kept", photos.size() > 0 ? 1 : 0);
-            response.put("deleted", deletedCount);
+            response.put("message", "Cleaned up " + (beforeCount - afterCount) + " old profile photos");
+            response.put("kept", afterCount);
+            response.put("deleted", beforeCount - afterCount);
 
             return ResponseEntity.ok(response);
 
@@ -416,4 +444,6 @@ public class ProfileService {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to clean up photos: " + e.getMessage()));
         }
     }
+
+
 }

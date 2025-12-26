@@ -6,7 +6,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,37 +21,46 @@ public class FileUploadConfig {
     public CommandLineRunner initUploadDirectories() {
         return args -> {
             try {
-                // Use absolute path to avoid confusion
-                String absolutePath = new File(uploadDir).getAbsolutePath();
-                Path uploadPath = Paths.get(absolutePath);
+                Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
 
-                log.info("Upload directory configured at: {}", absolutePath);
+                log.info("=== FILE UPLOAD CONFIGURATION ===");
+                log.info("Upload base directory: {}", uploadPath);
 
+                // Create main upload directory
                 if (!Files.exists(uploadPath)) {
                     Files.createDirectories(uploadPath);
-                    log.info("Created upload directory: {}", uploadPath.toAbsolutePath());
+                    log.info("✅ Created main upload directory: {}", uploadPath);
                 }
 
-                // Create users subdirectory
-                Path usersPath = uploadPath.resolve("users");
-                if (!Files.exists(usersPath)) {
-                    Files.createDirectories(usersPath);
-                    log.info("Created users directory: {}", usersPath.toAbsolutePath());
-                }
+                // Create all subdirectories
+                String[] subDirs = {
+                        "backups",
+                        "documents",           // Main documents directory
+                        "portfolios",          // Portfolio metadata
+                        "profile-photos",      // User profile pictures
+                        "temp",                // Temporary uploads
+                        "users"                // User-specific directories (legacy)
+                };
 
-                // Create other necessary directories
-                String[] subDirs = {"temp", "documents", "portfolios"};
                 for (String subDir : subDirs) {
                     Path dirPath = uploadPath.resolve(subDir);
                     if (!Files.exists(dirPath)) {
                         Files.createDirectories(dirPath);
-                        log.info("Created directory: {}", dirPath.toAbsolutePath());
+                        log.info("✅ Created directory: {}", dirPath);
                     }
                 }
 
+                // Verify write permissions
+                Path testFile = uploadPath.resolve("documents").resolve("test-write.txt");
+                Files.writeString(testFile, "Test write at " + System.currentTimeMillis());
+                Files.deleteIfExists(testFile);
+                log.info("✅ Write test successful");
+
+                log.info("=== UPLOAD DIRECTORIES READY ===");
+
             } catch (Exception e) {
-                log.error("Failed to create upload directories: ", e);
-                throw new RuntimeException("Failed to create upload directories", e);
+                log.error("❌ Failed to create upload directories", e);
+                throw new RuntimeException("Failed to initialize upload directories: " + e.getMessage(), e);
             }
         };
     }

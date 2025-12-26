@@ -6,12 +6,17 @@ import com.fpms.fpms_backend.service.UserContextService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -21,6 +26,10 @@ public class ProfileController {
 
     private final ProfileService profileService;
     private final UserContextService userContextService;
+
+    // Inject the same upload directory as ProfileService
+    @Value("${file.upload-dir:uploads}")
+    private String uploadBaseDir;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile() {
@@ -143,27 +152,28 @@ public class ProfileController {
             Long userId = userContextService.getCurrentUserId()
                     .orElseThrow(() -> new RuntimeException("User not authenticated"));
 
-            // Get the expected upload path
-            String userProfileDir = profileService.getUserProfilePhotosDirectory(userId);
-            java.nio.file.Path uploadPath = java.nio.file.Paths.get(userProfileDir);
+            // Get the expected upload path using consistent method
+            String userProfileDir = getUserProfilePhotosDirectory(userId);
+            Path uploadPath = Paths.get(userProfileDir).toAbsolutePath().normalize();
 
             Map<String, Object> debugInfo = new HashMap<>();
             debugInfo.put("userId", userId);
             debugInfo.put("expectedPath", userProfileDir);
-            debugInfo.put("absolutePath", uploadPath.toAbsolutePath().toString());
-            debugInfo.put("exists", java.nio.file.Files.exists(uploadPath));
-            debugInfo.put("isDirectory", java.nio.file.Files.isDirectory(uploadPath));
+            debugInfo.put("absolutePath", uploadPath.toString());
+            debugInfo.put("exists", Files.exists(uploadPath));
+            debugInfo.put("isDirectory", Files.isDirectory(uploadPath));
+            debugInfo.put("baseDirConfig", uploadBaseDir);
 
             // Try to create directory if it doesn't exist
-            if (!java.nio.file.Files.exists(uploadPath)) {
-                java.nio.file.Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
                 debugInfo.put("created", true);
             }
 
             // Check uploads base directory
-            java.nio.file.Path basePath = java.nio.file.Paths.get("uploads");
-            debugInfo.put("basePath", basePath.toAbsolutePath().toString());
-            debugInfo.put("baseExists", java.nio.file.Files.exists(basePath));
+            Path basePath = Paths.get(uploadBaseDir).toAbsolutePath().normalize();
+            debugInfo.put("basePath", basePath.toString());
+            debugInfo.put("baseExists", Files.exists(basePath));
 
             return ResponseEntity.ok(debugInfo);
 
@@ -181,26 +191,24 @@ public class ProfileController {
 
             Map<String, Object> result = new HashMap<>();
 
-            // Check the actual file exists
-            java.nio.file.Path filePath = java.nio.file.Paths.get("uploads/users/" + userId + "/profile-photos/profile_1766315620752.jpg");
-            result.put("fileAbsolutePath", filePath.toAbsolutePath().toString());
-            result.put("fileExists", java.nio.file.Files.exists(filePath));
-
             // Check the directory
-            java.nio.file.Path dirPath = java.nio.file.Paths.get("uploads/users/" + userId + "/profile-photos");
-            result.put("dirAbsolutePath", dirPath.toAbsolutePath().toString());
-            result.put("dirExists", java.nio.file.Files.exists(dirPath));
+            String userProfileDir = getUserProfilePhotosDirectory(userId);
+            Path dirPath = Paths.get(userProfileDir).toAbsolutePath().normalize();
+            result.put("dirAbsolutePath", dirPath.toString());
+            result.put("dirExists", Files.exists(dirPath));
 
             // List files in directory
-            if (java.nio.file.Files.exists(dirPath)) {
-                java.util.List<String> files = java.nio.file.Files.list(dirPath)
+            if (Files.exists(dirPath)) {
+                var files = Files.list(dirPath)
                         .map(p -> p.getFileName().toString())
-                        .collect(java.util.stream.Collectors.toList());
+                        .collect(Collectors.toList());
                 result.put("files", files);
+                result.put("fileCount", files.size());
             }
 
             // Test URL
-            result.put("testUrl", "http://localhost:8080/uploads/users/" + userId + "/profile-photos/profile_1766315620752.jpg");
+            result.put("testUploadUrl", "http://localhost:8080/uploads/users/" + userId + "/profile-photos/test.jpg");
+            result.put("configUploadDir", uploadBaseDir);
 
             return ResponseEntity.ok(result);
 
@@ -209,8 +217,12 @@ public class ProfileController {
         }
     }
 
-    // Add this helper method to ProfileService interface
+    /**
+     * Get user profile photos directory - using same logic as ProfileService
+     */
     public String getUserProfilePhotosDirectory(Long userId) {
-        return "uploads/users/" + userId + "/profile-photos/";
+        // Ensure consistent path with ProfileService
+        String baseDir = uploadBaseDir.endsWith("/") ? uploadBaseDir : uploadBaseDir + "/";
+        return baseDir + "users/" + userId + "/profile-photos/";
     }
 }

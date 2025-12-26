@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Portfolio</title>
     <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/portfolio.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
@@ -14,10 +16,129 @@
 <div class="main-content">
     <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
 
-    <div class="content">
-        <h2>My Portfolio</h2>
-        <p>Your portfolio content will appear here.</p>
+    <div class="content portfolio-container">
+        <div class="portfolio-header">
+            <h1><i class="fas fa-folder-open"></i> My Portfolio</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="showCreatePortfolioModal()">
+                    <i class="fas fa-plus"></i> New Portfolio
+                </button>
+                <button class="btn btn-secondary" onclick="showUploadModal()">
+                    <i class="fas fa-upload"></i> Upload File
+                </button>
+            </div>
+        </div>
+
+        <!-- Add a redirect/explanation since this should redirect to /portfolio -->
+        <div class="empty-state" style="text-align: center; padding: 60px 20px;">
+            <i class="fas fa-exclamation-circle fa-3x" style="color: #ff9800; margin-bottom: 20px;"></i>
+            <h3>Portfolio Management</h3>
+            <p>Your portfolio is now managed in the unified portfolio section.</p>
+            <p>Click the button below to access all your portfolios.</p>
+            <br>
+            <a th:href="@{/portfolio}" class="btn btn-primary">
+                <i class="fas fa-external-link-alt"></i> Go to Portfolios
+            </a>
+        </div>
     </div>
 </div>
+
+<!-- Create Portfolio Modal -->
+<div id="createPortfolioModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> Create New Portfolio</h3>
+            <button class="modal-close" onclick="closeModal('createPortfolioModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="portfolioName">Portfolio Name *</label>
+                <input type="text" id="portfolioName" class="form-control" placeholder="Enter portfolio name" required>
+            </div>
+            <div class="form-group">
+                <label for="portfolioDescription">Description (Optional)</label>
+                <textarea id="portfolioDescription" class="form-control" rows="3"
+                          placeholder="Enter portfolio description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="portfolioType">Portfolio Type *</label>
+                <select id="portfolioType" class="form-control" required>
+                    <option value="">Select type...</option>
+                    <option value="PERSONAL">Personal Portfolio</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('createPortfolioModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createPortfolio()">Create Portfolio</button>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-upload"></i> Upload File</h3>
+            <button class="modal-close" onclick="closeModal('uploadModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="uploadPortfolio">Select Portfolio *</label>
+                <select id="uploadPortfolio" class="form-control" required>
+                    <option value="">Select a portfolio...</option>
+                </select>
+            </div>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h4>Drag & Drop files here</h4>
+                <p>or click to browse</p>
+                <p class="upload-hint">Max file size: 10MB • Supported: PDF, Word, Excel, Images</p>
+                <p class="upload-hint text-danger"><i class="fas fa-ban"></i> Videos are not allowed</p>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt" style="display: none;" onchange="handleFileSelect()">
+            <div id="uploadPreview"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+            <button class="btn btn-primary" id="uploadBtn" onclick="uploadFiles()" disabled>Upload Files</button>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/portfolio.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load portfolios for upload dropdown
+        loadPortfoliosForUpload();
+        
+        // Setup event listeners
+        setupEventListeners();
+        setupFileUpload();
+    });
+
+    // Load portfolios for upload dropdown
+    async function loadPortfoliosForUpload() {
+        const select = document.getElementById('uploadPortfolio');
+        if (!select) return;
+
+        try {
+            const response = await fetch('/portfolio/api/my-portfolios');
+            const result = await response.json();
+            
+            if (result.success && result.portfolios) {
+                let html = '<option value="">Select a portfolio...</option>';
+                result.portfolios.forEach(portfolio => {
+                    html += `<option value="${portfolio.id}">${escapeHtml(portfolio.name)}</option>`;
+                });
+                select.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Error loading portfolios:', error);
+        }
+    }
+    /*]]>*/
+</script>
 </body>
 </html>

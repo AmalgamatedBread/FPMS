@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "faculty")
@@ -60,6 +62,22 @@ public class Faculty {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Add these portfolio relationships
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Portfolio> portfolios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PortfolioItem> uploadedItems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "sharedWith", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PortfolioShare> sharedPortfolios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "submittedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ApprovalRequest> submittedApprovals = new ArrayList<>();
+
+    @OneToMany(mappedBy = "reviewedBy", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ApprovalRequest> reviewedApprovals = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -69,5 +87,10 @@ public class Faculty {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // Helper method to get full name
+    public String getFullName() {
+        return firstName + " " + lastName;
     }
 }

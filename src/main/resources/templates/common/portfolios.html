@@ -1,23 +1,511 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Portfolio</title>
+    <title>Portfolios - FPMS</title>
     <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/portfolio.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Additional styles for upload system */
+        .upload-area {
+            border: 2px dashed #4361ee;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            background-color: #e9ecef;
+            border-color: #3a56d4;
+        }
+        .upload-area i {
+            font-size: 48px;
+            color: #4361ee;
+            margin-bottom: 15px;
+        }
+        .upload-hint {
+            font-size: 12px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        .upload-preview {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .preview-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .preview-icon {
+            font-size: 20px;
+            color: #4361ee;
+            margin-right: 12px;
+        }
+        .preview-info {
+            flex: 1;
+            text-align: left;
+        }
+        .preview-name {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .preview-size {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .remove-file {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .destination-options {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .destination-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .destination-option:hover {
+            border-color: #4361ee;
+            background-color: #f8f9fa;
+        }
+        .destination-option input {
+            margin-right: 8px;
+        }
+        .destination-option i {
+            margin-right: 8px;
+            color: #4361ee;
+        }
+    </style>
 </head>
 <body>
-
-<th:block th:replace="~{common/dynamic_layout_fragments :: dynamicHeader}"></th:block>
+<!-- Include Dynamic Header -->
+<div th:replace="common/dynamic_layout_fragments :: dynamicHeader"></div>
 
 <div class="main-content">
-    <th:block th:replace="~{common/dynamic_layout_fragments :: dynamicSidebar}"></th:block>
+    <!-- Include Dynamic Sidebar -->
+    <div th:replace="common/dynamic_layout_fragments :: dynamicSidebar"></div>
 
-    <div class="content">
-        <h2>My Portfolio</h2>
-        <p>Your portfolio content will appear here.</p>
+    <!-- Main Content -->
+    <div class="content portfolio-container">
+        <!-- Check if user exists -->
+        <div th:if="${user == null}">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                User not found. Please <a th:href="@{/login}">login</a>.
+            </div>
+        </div>
+
+        <div th:if="${user != null}">
+            <!-- Header with role-specific title -->
+            <div class="portfolio-header">
+                <h1>
+                    <i class="fas fa-folder-open"></i>
+                    <span th:text="${user.role.name() == 'FACULTY' ? 'My Portfolio' : 'Portfolios'}"></span>
+                </h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="showCreatePortfolioModal()">
+                        <i class="fas fa-plus"></i> New Portfolio
+                    </button>
+                    <button class="btn btn-secondary" onclick="showUploadModal()">
+                        <i class="fas fa-upload"></i> Upload File
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${error}" class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${error}"></span>
+            </div>
+
+            <!-- Portfolio Tabs -->
+            <div class="portfolio-tabs">
+                <!-- Documents Tab for ALL ROLES -->
+                <button class="tab-btn active" data-tab="documents">
+                    <i class="fas fa-file"></i> Documents
+                </button>
+
+                <!-- Personal Portfolios Tab for ALL ROLES -->
+                <button class="tab-btn" data-tab="my-portfolios">
+                    <i class="fas fa-user"></i>
+                    <span th:if="${user.role.name() == 'FACULTY'}">My Portfolios</span>
+                    <span th:if="${user.role.name() == 'DEPT_HEAD' or user.role.name() == 'DEAN'}">Portfolios</span>
+                </button>
+
+                <!-- Shared with Me Tab for ALL ROLES -->
+                <button class="tab-btn" data-tab="shared-portfolios">
+                    <i class="fas fa-share-alt"></i> Shared with Me
+                </button>
+
+                <!-- Department Portfolios for HEADS only -->
+                <button class="tab-btn" th:if="${user.role.name() == 'DEPT_HEAD'}" data-tab="department-portfolios">
+                    <i class="fas fa-building"></i> Department Portfolios
+                </button>
+
+                <!-- College Portfolios for DEAN only -->
+                <button class="tab-btn" th:if="${user.role.name() == 'DEAN'}" data-tab="college-portfolios">
+                    <i class="fas fa-university"></i> College Portfolios
+                </button>
+            </div>
+
+            <!-- Documents Tab -->
+            <div id="documents" class="tab-content active">
+                <div id="documentsContainer">
+                    <div class="documents-header">
+                        <h3><i class="fas fa-folder"></i> All Documents</h3>
+                        <p>All your uploaded documents across all portfolios</p>
+                    </div>
+
+                    <div class="documents-actions">
+                        <button class="btn btn-primary" onclick="showUploadModal()">
+                            <i class="fas fa-upload"></i> Upload New Document
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadDocuments()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div id="documentsList" class="documents-list">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading documents...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My/Personal Portfolios Tab -->
+            <div id="my-portfolios" class="tab-content">
+                <div class="grid-view" id="portfoliosGrid">
+                    <div th:each="portfolio : ${myPortfolios}" class="portfolio-card"
+                         th:attr="data-portfolio-id=${portfolio.id}"
+                         th:id="'portfolio-' + ${portfolio.id}">
+                        <div class="card-header">
+                            <i th:if="${portfolio.type.name() == 'PERSONAL'}" class="fas fa-user-folder"></i>
+                            <i th:if="${portfolio.type.name() == 'DEPARTMENT'}" class="fas fa-building"></i>
+                            <i th:if="${portfolio.type.name() == 'COLLEGE'}" class="fas fa-university"></i>
+
+                            <span th:if="${portfolio.type.name() != 'PERSONAL'}"
+                                  class="shared-badge" th:text="${portfolio.type.name()}"></span>
+                            <div class="card-actions">
+                                <button class="action-btn delete-portfolio-btn"
+                                        th:attr="data-portfolio-id=${portfolio.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body" th:attr="data-portfolio-id=${portfolio.id}">
+                            <h3 th:text="${portfolio.name}"></h3>
+                            <p class="description" th:text="${portfolio.description ?: 'No description'}"></p>
+                            <div class="card-meta">
+                                <span><i class="fas fa-file"></i>
+                                    <span th:text="${portfolio.items != null ? portfolio.items.size() : 0}">0</span> items
+                                </span>
+                                <span><i class="fas fa-calendar"></i>
+                                    <span th:text="${#temporals.format(portfolio.createdAt, 'MMM dd, yyyy')}"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${myPortfolios == null or myPortfolios.empty}" class="empty-state">
+                        <i class="fas fa-folder-open fa-3x"></i>
+                        <h3>No Portfolios Yet</h3>
+                        <p>Create your first portfolio to start organizing your files</p>
+                        <button class="btn btn-primary" onclick="showCreatePortfolioModal()">
+                            <i class="fas fa-plus"></i> Create Portfolio
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shared with Me Tab -->
+            <div id="shared-portfolios" class="tab-content">
+                <div class="grid-view" id="sharedPortfoliosGrid">
+                    <div th:each="share : ${sharedPortfolios}" class="portfolio-card shared">
+                        <div class="card-header">
+                            <i class="fas fa-share-square"></i>
+                            <span class="shared-badge">Shared</span>
+                        </div>
+                        <div class="card-body" th:attr="data-portfolio-id=${share.portfolio.id}">
+                            <h3 th:text="${share.portfolio.name}"></h3>
+                            <p class="shared-by">Shared by:
+                                <span th:text="${share.portfolio.owner.firstName + ' ' + share.portfolio.owner.lastName}"></span>
+                            </p>
+                            <p class="description" th:text="${share.portfolio.description ?: 'No description'}"></p>
+                            <div class="card-meta">
+                                <span><i class="fas fa-key"></i>
+                                    <span th:text="${share.permission.name()}"></span>
+                                </span>
+                                <span><i class="fas fa-calendar"></i>
+                                    <span th:text="${#temporals.format(share.sharedAt, 'MMM dd, yyyy')}"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:if="${sharedPortfolios == null or sharedPortfolios.empty}" class="empty-state">
+                        <i class="fas fa-share-alt fa-3x"></i>
+                        <h3>No Shared Portfolios</h3>
+                        <p>No one has shared any portfolios with you yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Portfolios Tab -->
+            <div id="department-portfolios" class="tab-content" th:if="${user.role.name() == 'DEPT_HEAD'}">
+                <div id="departmentPortfoliosContainer">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading department portfolios...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- College Portfolios Tab -->
+            <div id="college-portfolios" class="tab-content" th:if="${user.role.name() == 'DEAN'}">
+                <div id="collegePortfoliosContainer">
+                    <div class="tab-header">
+                        <h3><i class="fas fa-university"></i> College Portfolios</h3>
+                        <p>College-level portfolios accessible only to deans</p>
+                    </div>
+
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="showCreatePortfolioModal()">
+                            <i class="fas fa-plus"></i> Create College Portfolio
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadCollegePortfolios()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+
+                    <div id="collegePortfoliosList">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading college portfolios...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Create Portfolio Modal -->
+<div id="createPortfolioModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> Create New Portfolio</h3>
+            <button class="modal-close" onclick="closeModal('createPortfolioModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="portfolioName">Portfolio Name</label>
+                <input type="text" id="portfolioName" class="form-control" placeholder="Enter portfolio name" required>
+            </div>
+            <div class="form-group">
+                <label for="portfolioDescription">Description (Optional)</label>
+                <textarea id="portfolioDescription" class="form-control" rows="3"
+                          placeholder="Enter portfolio description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="portfolioType">Portfolio Type *</label>
+                <select id="portfolioType" class="form-control" required>
+                    <option value="">Select type...</option>
+                    <option value="PERSONAL">Personal Portfolio</option>
+                    <option value="DEPARTMENT" th:if="${user.role.name() == 'DEPT_HEAD'}">
+                        Department Portfolio
+                    </option>
+                    <option value="COLLEGE" th:if="${user.role.name() == 'DEAN'}">
+                        College Portfolio
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('createPortfolioModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createPortfolio()">Create Portfolio</button>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-upload"></i> Upload File</h3>
+            <button class="modal-close" onclick="closeModal('uploadModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Upload destination selector -->
+            <div class="form-group">
+                <label>Upload Destination:</label>
+                <div class="destination-options">
+                    <label class="destination-option">
+                        <input type="radio" name="uploadDestination" value="portfolio" checked
+                               onchange="toggleUploadDestination()">
+                        <i class="fas fa-folder"></i>
+                        <span>To Portfolio</span>
+                    </label>
+                    <label class="destination-option">
+                        <input type="radio" name="uploadDestination" value="documents"
+                               onchange="toggleUploadDestination()">
+                        <i class="fas fa-user"></i>
+                        <span>To My Documents</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Portfolio selection (shown when destination is portfolio) -->
+            <div class="form-group" id="portfolioSelection">
+                <label for="uploadPortfolio">Select Portfolio</label>
+                <select id="uploadPortfolio" class="form-control" required>
+                    <option value="">Loading portfolios...</option>
+                </select>
+            </div>
+
+            <!-- Documents category selection (shown when destination is documents) -->
+            <div class="form-group" id="documentsCategory" style="display: none;">
+                <label for="documentCategory">Category *</label>
+                <select id="documentCategory" class="form-control">
+                    <option value="personal">Personal Documents</option>
+                    <option value="work">Work Documents</option>
+                    <option value="archive">Archive</option>
+                </select>
+                <small class="form-text text-muted">
+                    Personal: Private documents<br>
+                    Work: Work-related files<br>
+                    Archive: Archived documents
+                </small>
+            </div>
+
+            <!-- Upload area -->
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h4>Drag & Drop files here</h4>
+                <p>or click to browse</p>
+                <p class="upload-hint">Max file size: 50MB</p>
+                <p class="upload-hint">Supported: PDF, Word, Excel, PowerPoint, Images, Text, ZIP, RAR</p>
+                <p class="upload-hint text-danger"><i class="fas fa-ban"></i> Videos are not allowed</p>
+            </div>
+            <input type="file" id="fileInput" multiple
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
+                   style="display: none;">
+
+            <!-- Upload preview -->
+            <div id="uploadPreview" class="upload-preview"></div>
+
+            <!-- Upload progress -->
+            <div id="uploadProgress" style="display: none;">
+                <div class="progress" style="height: 8px;">
+                    <div id="uploadProgressBar" class="progress-bar" style="width: 0%; background-color: #4361ee;"></div>
+                </div>
+                <div id="uploadStatus" class="text-center mt-2" style="font-size: 12px;"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+            <button class="btn btn-primary" id="uploadBtn" onclick="uploadFiles()" disabled>
+                <i class="fas fa-upload"></i> Upload Files
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Item Details Modal (for document details) -->
+<div id="itemDetailsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-info-circle"></i> Document Details</h3>
+            <button class="modal-close" onclick="closeModal('itemDetailsModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="itemDetailsContent">
+            <!-- Content will be loaded dynamically -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('itemDetailsModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- FIXED: SINGLE INITIALIZATION SCRIPT -->
+<script>
+    // Debug logging
+    console.log('=== PORTFOLIO PAGE INITIALIZATION ===');
+
+    // Prevent duplicate initialization
+    if (window.portfolioPageInitialized) {
+        console.warn('Portfolio page already initialized, skipping');
+    } else {
+        window.portfolioPageInitialized = true;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded for portfolio page');
+
+            // Safely get user data from Thymeleaf
+            const userRole = /*[[${user != null ? user.role.name() : 'GUEST'}]]*/ 'GUEST';
+            const userId = /*[[${user != null ? user.facultyId : 0}]]*/ 0;
+
+            console.log('Setting user data:', { role: userRole, id: userId });
+
+            // Set global variables for JavaScript
+            window.currentUserRole = userRole;
+            window.currentUserId = userId;
+
+            // Clear any existing timeout
+            if (window.portfolioInitTimeout) {
+                clearTimeout(window.portfolioInitTimeout);
+            }
+
+            // Initialize with delay to ensure everything is loaded
+            window.portfolioInitTimeout = setTimeout(function() {
+                console.log('Initializing portfolio system...');
+                if (typeof initPortfolioSystem === 'function') {
+                    initPortfolioSystem();
+                } else {
+                    console.error('initPortfolioSystem function not found!');
+                }
+            }, 500);
+        });
+    }
+
+    // Simple viewPortfolio function for card clicks
+    function viewPortfolio(portfolioId) {
+        console.log('Viewing portfolio:', portfolioId);
+        if (portfolioId) {
+            window.location.href = '/portfolio/details/' + portfolioId;
+        }
+    }
+</script>
+
+<!-- LOAD PORTFOLIO.JS ONLY ONCE -->
+<script th:src="@{/js/portfolio.js}"></script>
+
 </body>
 </html>

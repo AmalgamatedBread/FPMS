@@ -3,6 +3,7 @@ package com.fpms.fpms_backend.security;
 import com.fpms.fpms_backend.service.CustomUserDetailsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,10 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.io.File;
 import java.util.Arrays;
 
 @Configuration
@@ -32,6 +30,9 @@ public class SecurityConfig {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+
+    @Value("${cors.allowed.origins:http://localhost:8080}")
+    private String allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -54,14 +55,34 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "http://127.0.0.1:8080"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // Parse comma-separated origins from configuration
+        String[] origins = allowedOrigins.split(",");
+        configuration.setAllowedOrigins(Arrays.asList(origins));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Content-Disposition"
+        ));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setMaxAge(3600L); // 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
+        log.info("CORS Configuration: Allowed Origins = {}", Arrays.toString(origins));
+
         return source;
     }
 
@@ -88,7 +109,8 @@ public class SecurityConfig {
                                 "/icons/**",
                                 "/uploads/**",
                                 "/error",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/api/profile/health"
                         ).permitAll()
 
                         // Role-based access
@@ -96,6 +118,9 @@ public class SecurityConfig {
                         .requestMatchers("/head-dashboard").hasRole("DEPT_HEAD")
                         .requestMatchers("/dean-dashboard").hasRole("DEAN")
                         .requestMatchers("/approval").hasAnyRole("DEAN", "DEPT_HEAD")
+
+                        // Portfolio access for all authenticated users
+                        .requestMatchers("/portfolio/**").authenticated()
 
                         // Common pages accessible to all authenticated users
                         .requestMatchers(
@@ -146,28 +171,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public WebMvcConfigurer webMvcConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addResourceHandlers(ResourceHandlerRegistry registry) {
-                // Get the project root directory
-                String projectRoot = new File("").getAbsolutePath();
-                String uploadPath = projectRoot + "/uploads/";
-
-                log.info("Serving uploads from: {}", uploadPath);
-
-                registry.addResourceHandler("/uploads/**")
-                        .addResourceLocations("file:" + uploadPath)
-                        .setCachePeriod(0); // No cache for development
-            }
-        };
-    }
-
     private String determineTargetUrl(Authentication authentication) {
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             String authorityString = authority.getAuthority();
-            log.info("Checking authority: {}", authorityString);
+            log.debug("Checking authority: {}", authorityString);
 
             if (authorityString.equals("ROLE_DEAN")) {
                 return "/dean-dashboard";

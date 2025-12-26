@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${portfolio.name} + ' - FPMS'">Portfolio View - FPMS</title>
+    <link rel="stylesheet" th:href="@{/css/top_side.css}">
+    <link rel="stylesheet" th:href="@{/css/portfolio.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== BREADCRUMB NAVIGATION ===== */
+        .breadcrumb-container {
+            background: white;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .breadcrumb-item a {
+            color: #4361ee;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .breadcrumb-item a:hover {
+            color: #3a56d4;
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            color: #adb5bd;
+            margin: 0 5px;
+            font-size: 12px;
+        }
+
+        .breadcrumb-current {
+            color: #495057;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== ENHANCED PORTFOLIO HEADER ===== */
+        .portfolio-content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+
+        .portfolio-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .portfolio-icon-large {
+            font-size: 32px;
+            color: #4361ee;
+            background: #f0f4ff;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        .portfolio-details h2 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            color: #212529;
+        }
+
+        .portfolio-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .portfolio-type {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ===== FOLDER PATH INDICATOR ===== */
+        .folder-path-indicator {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4361ee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .current-folder {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .current-folder i {
+            color: #4361ee;
+            font-size: 20px;
+        }
+
+        .folder-name {
+            font-weight: 500;
+            color: #212529;
+        }
+
+        /* ===== ENHANCED ITEMS GRID ===== */
+        .items-grid-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .items-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #212529;
+        }
+
+        .items-count {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        /* Enhanced item cards */
+        .item-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #4361ee;
+        }
+
+        .item-card.folder {
+            background: #f8faff;
+            border-color: #d6e4ff;
+        }
+
+        .item-card.folder:hover {
+            background: #f0f7ff;
+            border-color: #4361ee;
+        }
+
+        .item-icon {
+            font-size: 28px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .folder .item-icon {
+            color: #4361ee;
+            background: #f0f4ff;
+        }
+
+        .file .item-icon {
+            color: #6c757d;
+            background: #f8f9fa;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 500;
+            color: #212529;
+            margin-bottom: 5px;
+        }
+
+        .item-details {
+            font-size: 13px;
+            color: #6c757d;
+            display: flex;
+            gap: 15px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .item-card:hover .item-actions {
+            opacity: 1;
+        }
+
+        .item-action-btn {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .item-action-btn:hover {
+            background: #4361ee;
+            color: white;
+            border-color: #4361ee;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-content-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            background: white;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+            margin: 20px 0;
+        }
+
+        .empty-content-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #adb5bd;
+        }
+
+        .empty-content-state h4 {
+            margin-bottom: 10px;
+            color: #495057;
+            font-size: 18px;
+        }
+
+        /* ===== BACK TO PORTFOLIOS BUTTON ===== */
+        .back-to-portfolios {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #4361ee;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: 1px solid #4361ee;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .back-to-portfolios:hover {
+            background: #4361ee;
+            color: white;
+            text-decoration: none;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .portfolio-content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .portfolio-info {
+                width: 100%;
+            }
+
+            .content-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .item-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .item-actions {
+                opacity: 1;
+                width: 100%;
+                justify-content: center;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Include Dynamic Header -->
+<div th:replace="common/dynamic_layout_fragments :: dynamicHeader"></div>
+
+<div class="main-content">
+    <!-- Include Dynamic Sidebar -->
+    <div th:replace="common/dynamic_layout_fragments :: dynamicSidebar"></div>
+
+    <!-- Main Content -->
+    <div class="content portfolio-container">
+        <div class="portfolio-content-wrapper" th:if="${user != null}">
+            <!-- Breadcrumb Navigation -->
+            <div class="breadcrumb-container">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/portfolio">
+                            <i class="fas fa-folder-open"></i>
+                            <span th:text="${user.role.name() == 'FACULTY' ? 'My Portfolios' : 'Portfolios'}"></span>
+                        </a>
+                    </li>
+                    <li class="breadcrumb-separator">
+                        <i class="fas fa-chevron-right"></i>
+                    </li>
+                    <li class="breadcrumb-item breadcrumb-current">
+                        <i class="fas" th:class="${portfolio.type.name() == 'PERSONAL' ? 'fa-user-folder' :
+                                                   portfolio.type.name() == 'DEPARTMENT' ? 'fa-building' :
+                                                   'fa-university'}"></i>
+                        <span th:text="${portfolio.name}"></span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Portfolio Header -->
+            <div class="portfolio-content-header">
+                <div class="portfolio-info">
+                    <div class="portfolio-icon-large">
+                        <i class="fas" th:class="${portfolio.type.name() == 'PERSONAL' ? 'fa-user-folder' :
+                                                   portfolio.type.name() == 'DEPARTMENT' ? 'fa-building' :
+                                                   'fa-university'}"></i>
+                    </div>
+                    <div class="portfolio-details">
+                        <h2 th:text="${portfolio.name}"></h2>
+                        <div class="portfolio-meta">
+                            <span class="portfolio-type" th:text="${portfolio.type.name()}"></span>
+                            <span><i class="fas fa-calendar"></i> Created:
+                                <span th:text="${#temporals.format(portfolio.createdAt, 'MMM dd, yyyy')}"></span>
+                            </span>
+                            <span><i class="fas fa-user"></i> Owner:
+                                <span th:text="${portfolio.owner.firstName + ' ' + portfolio.owner.lastName}"></span>
+                            </span>
+                        </div>
+                        <p class="portfolio-description" th:if="${portfolio.description}"
+                           style="margin-top: 8px; color: #6c757d; font-size: 14px;">
+                            <i class="fas fa-info-circle"></i>
+                            <span th:text="${portfolio.description}"></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="content-actions">
+                    <button class="btn btn-primary" onclick="showUploadModal()">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                    <button class="btn btn-secondary" onclick="createFolder()">
+                        <i class="fas fa-folder-plus"></i> New Folder
+                    </button>
+                </div>
+            </div>
+
+            <!-- Current Folder Path (only shown when inside a folder) -->
+            <div th:if="${not currentFolderPath.isEmpty()}" class="folder-path-indicator">
+                <div class="current-folder">
+                    <i class="fas fa-folder-open"></i>
+                    <div>
+                        <div class="folder-path-text">
+                            <span style="font-size: 12px; color: #6c757d;">Current folder:</span>
+                            <div class="folder-name" th:text="${currentFolderPath.get(currentFolderPath.size()-1).name}"></div>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" th:href="@{/portfolio/details/{id}(id=${portfolio.id})}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-arrow-up"></i> Back to Portfolio
+                </a>
+            </div>
+
+            <!-- Folder Path Breadcrumb (for nested folders) -->
+            <div th:if="${not currentFolderPath.isEmpty()}" class="breadcrumb-container" style="margin-top: 10px;">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/portfolio/details/{id}(id=${portfolio.id})}">
+                            <i class="fas" th:class="${portfolio.type.name() == 'PERSONAL' ? 'fa-user-folder' :
+                                                       portfolio.type.name() == 'DEPARTMENT' ? 'fa-building' :
+                                                       'fa-university'}"></i>
+                            <span th:text="${portfolio.name}"></span>
+                        </a>
+                    </li>
+                    <li th:each="folder, iter : ${currentFolderPath}" class="breadcrumb-item">
+                        <span class="breadcrumb-separator">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                        <span th:if="${iter.last}" class="breadcrumb-current">
+                            <i class="fas fa-folder"></i>
+                            <span th:text="${folder.name}"></span>
+                        </span>
+                        <a th:unless="${iter.last}" th:href="@{/portfolio/details/{portfolioId}(portfolioId=${portfolio.id}, folderId=${folder.id})}">
+                            <i class="fas fa-folder"></i>
+                            <span th:text="${folder.name}"></span>
+                        </a>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Items Grid -->
+            <div class="items-grid-container">
+                <div class="items-header">
+                    <h3>
+                        <i class="fas" th:class="${folderId != null ? 'fa-folder' : 'fa-folder-open'}"></i>
+                        <span th:text="${folderId != null ? 'Folder Contents' : 'Portfolio Contents'}"></span>
+                    </h3>
+                    <div class="items-count" th:text="${items.size() + ' item' + (items.size() != 1 ? 's' : '')}"></div>
+                </div>
+
+                <div class="items-list-container">
+                    <!-- Empty State -->
+                    <div th:if="${items == null or items.empty}" class="empty-content-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h4 th:text="${folderId != null ? 'This folder is empty' : 'This portfolio is empty'}"></h4>
+                        <p th:text="${folderId != null ? 'Upload files to this folder' : 'Upload files or create folders to get started'}"></p>
+                        <div style="margin-top: 20px;">
+                            <button class="btn btn-primary" onclick="showUploadModal()">
+                                <i class="fas fa-upload"></i> Upload Files
+                            </button>
+                            <button class="btn btn-secondary" onclick="createFolder()" th:if="${folderId == null}">
+                                <i class="fas fa-folder-plus"></i> Create Folder
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Items List -->
+                    <div th:if="${not items.empty}">
+                        <!-- Folders First -->
+                        <div th:each="item : ${items}" th:if="${item.folder}">
+                            <div class="item-card folder" onclick="openFolder(${item.id})">
+                                <div class="item-icon">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <div class="item-info">
+                                    <div class="item-name" th:text="${item.name}"></div>
+                                    <div class="item-details">
+                                        <span><i class="fas fa-folder"></i> Folder</span>
+                                        <span><i class="fas fa-user"></i>
+                                            <span th:text="${item.uploadedBy.firstName + ' ' + item.uploadedBy.lastName}"></span>
+                                        </span>
+                                        <span><i class="fas fa-calendar"></i>
+                                            <span th:text="${#temporals.format(item.uploadedAt, 'MMM dd, yyyy')}"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="item-action-btn" onclick="deleteItem(${item.id}, event)" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Files Second -->
+                        <div th:each="item : ${items}" th:if="${not item.folder}">
+                            <div class="item-card file" onclick="viewItem(${item.id})">
+                                <div class="item-icon">
+                                    <i th:if="${item.fileType != null and item.fileType.contains('pdf')}" class="fas fa-file-pdf"></i>
+                                    <i th:if="${item.fileType != null and (item.fileType.contains('word') or item.fileType.contains('document'))}"
+                                       class="fas fa-file-word"></i>
+                                    <i th:if="${item.fileType != null and (item.fileType.contains('excel') or item.fileType.contains('sheet'))}"
+                                       class="fas fa-file-excel"></i>
+                                    <i th:if="${item.fileType != null and (item.fileType.contains('powerpoint') or item.fileType.contains('presentation'))}"
+                                       class="fas fa-file-powerpoint"></i>
+                                    <i th:if="${item.fileType != null and item.fileType.contains('image')}" class="fas fa-file-image"></i>
+                                    <i th:if="${item.fileType == null or not (item.fileType.contains('pdf') or item.fileType.contains('word') or item.fileType.contains('excel') or item.fileType.contains('powerpoint') or item.fileType.contains('image'))}"
+                                       class="fas fa-file"></i>
+                                </div>
+                                <div class="item-info">
+                                    <div class="item-name" th:text="${item.name}"></div>
+                                    <div class="item-details">
+                                        <span th:if="${item.fileType}" th:text="${item.fileType.split('/')[1]?.toUpperCase() ?: 'FILE'}"></span>
+                                        <span th:if="${item.fileSize}">
+                                            <i class="fas fa-hdd"></i>
+                                            <span th:text="${#numbers.formatDecimal(item.fileSize / 1024, 0, 0) + ' KB'}"></span>
+                                        </span>
+                                        <span><i class="fas fa-user"></i>
+                                            <span th:text="${item.uploadedBy.firstName + ' ' + item.uploadedBy.lastName}"></span>
+                                        </span>
+                                        <span><i class="fas fa-calendar"></i>
+                                            <span th:text="${#temporals.format(item.uploadedAt, 'MMM dd, yyyy')}"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="item-action-btn" onclick="downloadItem(${item.id}, event)" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="item-action-btn" onclick="deleteItem(${item.id}, event)" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div th:if="${not items.empty}" style="padding: 20px; border-top: 1px solid #e9ecef;">
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button class="btn btn-primary" onclick="showUploadModal()">
+                            <i class="fas fa-upload"></i> Add More Files
+                        </button>
+                        <button class="btn btn-secondary" onclick="createFolder()" th:if="${folderId == null}">
+                            <i class="fas fa-folder-plus"></i> Create New Folder
+                        </button>
+                        <a th:href="@{/portfolio}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Portfolios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/portfolio.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const portfolioId = /*[[${portfolio.id}]]*/ null;
+        const folderId = /*[[${folderId}]]*/ null;
+        const userRole = /*[[${user != null ? user.role.name() : 'GUEST'}]]*/ 'GUEST';
+        const userId = /*[[${user != null ? user.facultyId : 0}]]*/ 0;
+
+        // Set global variables for the portfolio view
+        window.currentPortfolioId = portfolioId;
+        window.currentFolderId = folderId;
+        window.currentUserRole = userRole;
+        window.currentUserId = userId;
+
+        console.log('Portfolio View Loaded:', {
+            portfolioId: portfolioId,
+            folderId: folderId,
+            userRole: userRole,
+            userId: userId
+        });
+
+        // Initialize any portfolio view specific functionality
+        if (typeof initPortfolioView === 'function') {
+            setTimeout(initPortfolioView, 100);
+        }
+    });
+
+    function openFolder(folderId) {
+        const portfolioId = window.currentPortfolioId;
+        if (!portfolioId) {
+            alert('No portfolio selected');
+            return;
+        }
+        window.location.href = `/portfolio/details/${portfolioId}?folderId=${folderId}`;
+    }
+
+    function viewItem(itemId) {
+        window.open(`/portfolio/download/${itemId}`, '_blank');
+    }
+
+    function downloadItem(itemId, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        window.open(`/portfolio/download/${itemId}`, '_blank');
+    }
+
+    async function deleteItem(itemId, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        if (!confirm('Are you sure you want to delete this item?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/portfolio/delete-item/${itemId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Item deleted successfully');
+                window.location.reload();
+            } else {
+                alert(result.message || 'Failed to delete item');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('Network error. Please try again.');
+        }
+    }
+
+    function createFolder() {
+        const portfolioId = window.currentPortfolioId;
+        const folderId = window.currentFolderId;
+
+        const folderName = prompt('Enter folder name:');
+        if (!folderName || folderName.trim() === '') {
+            return;
+        }
+
+        const formData = new URLSearchParams();
+        formData.append('folderName', folderName.trim());
+        formData.append('portfolioId', portfolioId);
+        if (folderId) {
+            formData.append('parentFolderId', folderId);
+        }
+
+        fetch('/portfolio/create-folder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Folder created successfully');
+                window.location.reload();
+            } else {
+                alert(result.message || 'Failed to create folder');
+            }
+        })
+        .catch(error => {
+            console.error('Create folder error:', error);
+            alert('Network error. Please try again.');
+        });
+    }
+
+    function showUploadModal() {
+        if (typeof window.showUploadModal === 'function') {
+            window.showUploadModal();
+        } else {
+            alert('Upload functionality loading... Please try again.');
+        }
+    }
+</script>
+</body>
+</html>

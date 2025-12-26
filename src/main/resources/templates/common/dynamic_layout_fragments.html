@@ -28,98 +28,79 @@
                th:class="${pageTitle == 'Profile' ? 'active' : ''}">
                 <img th:src="@{/icons/profile.png}" alt="Profile" width="28" height="28">
             </a>
-            <span class="user-email" sec:authentication="name"></span>
+            <span class="user-email" th:text="${#authentication.principal.username}"></span>
         </div>
     </nav>
 </header>
 
-<!-- Dynamic Sidebar Fragment - FACULTY CAN ACCESS DEPARTMENT -->
+<!-- Dynamic Sidebar Fragment - UNIFIED FOR ALL ROLES -->
 <div th:fragment="dynamicSidebar">
     <div class="side-bar">
         <div class="top-section">
-            <!-- Dashboard Links - Only one will show based on role -->
+            <!-- Dashboard Links - Only show based on user's actual role -->
+            <!-- FACULTY Dashboard Link -->
             <a th:href="@{/faculty-dashboard}" title="Dashboard" class="sidebar-link"
                th:class="${pageTitle == 'Faculty Dashboard' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('FACULTY')">
+               sec:authorize="hasAuthority('ROLE_FACULTY')">
                 <img th:src="@{/icons/dashboard.png}" alt="Dashboard" width="28" height="28">
             </a>
 
+            <!-- DEPARTMENT HEAD Dashboard Link -->
             <a th:href="@{/head-dashboard}" title="Dashboard" class="sidebar-link"
                th:class="${pageTitle == 'Head Dashboard' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('DEPT_HEAD')">
+               sec:authorize="hasAuthority('ROLE_DEPT_HEAD')">
                 <img th:src="@{/icons/dashboard.png}" alt="Dashboard" width="28" height="28">
             </a>
 
+            <!-- DEAN Dashboard Link -->
             <a th:href="@{/dean-dashboard}" title="Dashboard" class="sidebar-link"
                th:class="${pageTitle == 'Dean Dashboard' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('DEAN')">
+               sec:authorize="hasAuthority('ROLE_DEAN')">
                 <img th:src="@{/icons/dashboard.png}" alt="Dashboard" width="28" height="28">
             </a>
 
-            <!-- ==================== FACULTY LINKS ==================== -->
-            <a th:href="@{/my-portfolio}" title="My Portfolio" class="sidebar-link"
-               th:class="${pageTitle == 'My Portfolio' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('FACULTY')">
-                <img th:src="@{/icons/portfolios.png}" alt="My Portfolio" width="28" height="28">
-            </a>
-
-            <a th:href="@{/submissions}" title="Submissions" class="sidebar-link"
-               th:class="${pageTitle == 'My Submissions' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('FACULTY')">
-                <img th:src="@{/icons/approval.png}" alt="Submissions" width="28" height="28">
-            </a>
-
-            <hr sec:authorize="hasRole('FACULTY')">
-
-            <a th:href="@{/forward-docs}" title="Forward documents" class="sidebar-link"
-               th:class="${pageTitle == 'Documents' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('FACULTY')">
-                <img th:src="@{/icons/Forward.png}" alt="Documents" width="28" height="28">
-            </a>
-
-            <!-- ========== DEPARTMENT LINK FOR FACULTY (VIEW ONLY) ========== -->
-            <a th:href="@{/department}" title="Department" class="sidebar-link"
-               th:class="${pageTitle == 'Department' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasRole('FACULTY')">
-                <img th:src="@{/icons/members.png}" alt="Department" width="28" height="28">
-            </a>
-            <!-- ==================== END FACULTY LINKS ==================== -->
-
-            <!-- ==================== HEAD/DEAN LINKS ==================== -->
-            <!-- Heads/Deans see Portfolios and Approval Queue -->
-            <a th:href="@{/portfolios}" title="Portfolios" class="sidebar-link"
+            <!-- ==================== UNIFIED PORTFOLIOS LINK ==================== -->
+            <!-- ALL ROLES see "Portfolios" in sidebar -->
+            <a th:href="@{/portfolio}" title="Portfolios" class="sidebar-link"
                th:class="${pageTitle == 'Portfolios' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasAnyRole('DEPT_HEAD', 'DEAN')">
+               sec:authorize="isAuthenticated()">
                 <img th:src="@{/icons/portfolios.png}" alt="Portfolios" width="28" height="28">
             </a>
 
+            <!-- ========== SUBMISSIONS ONLY FOR FACULTY ========== -->
+            <a th:href="@{/submissions}" title="My Submissions" class="sidebar-link"
+               th:class="${pageTitle == 'My Submissions' ? 'sidebar-link active' : 'sidebar-link'}"
+               sec:authorize="hasAuthority('ROLE_FACULTY')">
+                <img th:src="@{/icons/approval.png}" alt="Submissions" width="28" height="28">
+            </a>
+
+            <!-- ========== APPROVAL QUEUE ONLY FOR HEADS/DEANS ========== -->
             <a th:href="@{/approval}" title="Approval Queue" class="sidebar-link"
                th:class="${pageTitle == 'Approval Queue' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasAnyRole('DEPT_HEAD', 'DEAN')">
+               sec:authorize="hasAnyAuthority('ROLE_DEPT_HEAD', 'ROLE_DEAN')">
                 <img th:src="@{/icons/approval.png}" alt="Approval" width="28" height="28">
             </a>
 
-            <hr sec:authorize="hasAnyRole('DEPT_HEAD', 'DEAN')">
+            <!-- Horizontal rule for separation -->
+            <hr sec:authorize="hasAnyAuthority('ROLE_FACULTY', 'ROLE_DEPT_HEAD', 'ROLE_DEAN')">
 
+            <!-- ========== FORWARD DOCUMENTS FOR ALL ROLES ========== -->
             <a th:href="@{/forward-docs}" title="Forward Documents" class="sidebar-link"
                th:class="${pageTitle == 'Forward Documents' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasAnyRole('DEPT_HEAD', 'DEAN')">
+               sec:authorize="hasAnyAuthority('ROLE_FACULTY', 'ROLE_DEPT_HEAD', 'ROLE_DEAN')">
                 <img th:src="@{/icons/Forward.png}" alt="Forward" width="28" height="28">
             </a>
 
-            <!-- ========== DEPARTMENT LINK FOR HEADS/DEANS (WITH ACTIONS) ========== -->
+            <!-- ========== DEPARTMENT LINK FOR ALL ROLES ========== -->
             <a th:href="@{/department}" title="Department" class="sidebar-link"
                th:class="${pageTitle == 'Department' ? 'sidebar-link active' : 'sidebar-link'}"
-               sec:authorize="hasAnyRole('DEPT_HEAD', 'DEAN')">
+               sec:authorize="hasAnyAuthority('ROLE_FACULTY', 'ROLE_DEPT_HEAD', 'ROLE_DEAN')">
                 <img th:src="@{/icons/members.png}" alt="Department" width="28" height="28">
             </a>
-            <!-- ==================== END HEAD/DEAN LINKS ==================== -->
         </div>
 
         <div class="bottom-section">
-
             <!-- Common links for all roles -->
-
             <a th:href="@{/bin}" title="Bin" class="sidebar-link"
                th:class="${pageTitle == 'Bin' ? 'sidebar-link active' : 'sidebar-link'}"
                sec:authorize="isAuthenticated()">

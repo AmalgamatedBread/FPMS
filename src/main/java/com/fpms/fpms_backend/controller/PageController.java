@@ -23,9 +23,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
@@ -484,6 +482,7 @@ public class PageController {
         return "common/forward_docs";
     }
 
+    // FIXED: Redirect faculty to main portfolio system
     @GetMapping("/my-portfolio")
     public String myPortfolioPage(HttpServletRequest request, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -494,8 +493,8 @@ public class PageController {
         if (!"FACULTY".equals(role)) {
             return "redirect:/access-denied";
         }
-        model.addAttribute("pageTitle", "My Portfolio");
-        return "faculty/my_portfolio";
+        // UNIFIED: All roles go to the same portfolio page
+        return "redirect:/portfolio";
     }
 
     @GetMapping("/submissions")
@@ -563,21 +562,28 @@ public class PageController {
         return "common/notifications";
     }
 
+    // FIXED: Allow ALL roles to access portfolios
     @GetMapping("/portfolios")
-    public String portfoliosPage(HttpServletRequest request, Model model) {
+    public String portfoliosPage(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return "redirect:/login";
         }
 
         String role = extractRoleFromAuthorities(auth.getAuthorities());
-        if (!"DEPT_HEAD".equals(role) && !"DEAN".equals(role)) {
+
+        // UNIFIED: ALL ROLES can access portfolios
+        if (!"DEPT_HEAD".equals(role) && !"DEAN".equals(role) && !"FACULTY".equals(role)) {
             log.error("Portfolios page: Access denied for role {}", role);
             return "redirect:/access-denied";
         }
 
         model.addAttribute("pageTitle", "Portfolios");
-        return "common/portfolios";
-    }
+        model.addAttribute("userRole", role);
+        model.addAttribute("username", auth.getName());
 
+        // Redirect to the unified PortfolioController
+        return "redirect:/portfolio";
+    }
 }
