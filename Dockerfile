@@ -1,11 +1,11 @@
-FROM openjdk:21-slim
+FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY target/fpms-backend-*.jar app.jar
+COPY . .
 
-RUN mkdir -p /app/uploads && chmod 755 /app/uploads
+RUN chmod +x mvnw && ./mvnw clean package -Pprod -DskipTests
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "target/fpms-backend-*.jar"]
