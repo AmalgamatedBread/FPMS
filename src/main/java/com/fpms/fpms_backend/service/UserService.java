@@ -24,6 +24,7 @@ public class UserService {
     private final SystemCredentialsRepository credentialsRepository;
     private final PasswordEncoder passwordEncoder;
     private final DepartmentRepository departmentRepository;
+    private final AuthService authService; // Add AuthService dependency
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -87,6 +88,15 @@ public class UserService {
         savedFaculty.setSystemCredentials(savedCredentials);
         facultyRepository.save(savedFaculty);
 
+        // Create upload directory for the new user
+        try {
+            authService.createUserUploadDirectory(savedFaculty.getFacultyId());
+            log.info("Upload directory created for user ID: {}", savedFaculty.getFacultyId());
+        } catch (Exception e) {
+            log.warn("Failed to create upload directory for user {}: {}", savedFaculty.getFacultyId(), e.getMessage());
+            // Continue even if directory creation fails
+        }
+
         // Create response
         return createAuthResponse(savedFaculty, savedCredentials);
     }
@@ -144,7 +154,7 @@ public class UserService {
         faculty.setRole(newRole);
         facultyRepository.save(faculty);
 
-        // Also update credentials account type - FIXED METHOD CALL
+        // Also update credentials account type
         SystemCredentials credentials = credentialsRepository.findByFaculty_FacultyId(facultyId)
                 .orElseThrow(() -> new RuntimeException("Credentials not found for faculty ID: " + facultyId));
         credentials.setAccountType(newRole.toString());
