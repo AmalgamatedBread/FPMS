@@ -1,10 +1,12 @@
 package com.fpms.fpms_backend.service;
 
-import com.fpms.fpms_backend.dto.AuthResponse;
 import com.fpms.fpms_backend.dto.LoginRequest;
 import com.fpms.fpms_backend.dto.RegisterRequest;
+import com.fpms.fpms_backend.model.entities.Department;
 import com.fpms.fpms_backend.model.entities.Faculty;
 import com.fpms.fpms_backend.model.entities.SystemCredentials;
+import com.fpms.fpms_backend.model.enums.FacultyRole;
+import com.fpms.fpms_backend.repository.DepartmentRepository;
 import com.fpms.fpms_backend.repository.FacultyRepository;
 import com.fpms.fpms_backend.repository.SystemCredentialsRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +38,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final DepartmentService departmentService;
     private final AuthenticationManager authenticationManager;
-    private final UserService userService; // Add UserService dependency
+    private final DepartmentRepository departmentRepository; // Add this
 
     // Upload directory
     private final String UPLOAD_BASE_DIR = "uploads";
@@ -45,12 +47,77 @@ public class AuthService {
     public String processRegister(RegisterRequest request) {
         try {
             log.info("Processing registration form for: {}", request.getEmail());
-            
-            // Delegate to UserService which handles username and role correctly
-            AuthResponse response = userService.register(request);
-            
-            log.info("Registration successful for user ID: {}", response.getUser().getFacultyId());
-            
+
+            // Check if username already exists
+            if (credentialsRepository.existsByUsername(request.getUsername())) {
+                throw new RuntimeException("Username already exists");
+            }
+
+            // Check if email already exists
+            if (facultyRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
+
+            // Parse role
+            FacultyRole role;
+            try {
+                role = FacultyRole.valueOf(request.getRole());
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid role: " + request.getRole());
+            }
+
+            // Get department if specified
+            Department department = null;
+            if (request.getDepartment() != null && !request.getDepartment().isEmpty()) {
+                department = departmentRepository.findByDeptCode(request.getDepartment())
+                        .orElseThrow(() -> new RuntimeException("Department not found: " + request.getDepartment()));
+            }
+
+            // Create faculty entity
+            Faculty faculty = Faculty.builder()
+                    .firstName(request.getFirstName())
+                    .middleName(request.getMiddleName())
+                    .lastName(request.getLastName())
+                    .suffix(request.getSuffix())
+                    .email(request.getEmail())
+                    .telNo(request.getTelNo())
+                    .address(request.getAddress())
+                    .role(role)
+                    .department(department)
+                    .build();
+
+            // Save faculty
+            Faculty savedFaculty = facultyRepository.save(faculty);
+            log.info("Faculty created with ID: {}", savedFaculty.getFacultyId());
+
+            // Create credentials
+            SystemCredentials credentials = SystemCredentials.builder()
+                    .faculty(savedFaculty)
+                    .username(request.getUsername())
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .accountType(role.toString())
+                    .build();
+
+            // Save credentials
+            SystemCredentials savedCredentials = credentialsRepository.save(credentials);
+            log.info("Credentials created for faculty ID: {}", savedFaculty.getFacultyId());
+
+            // Associate credentials with faculty
+            savedFaculty.setSystemCredentials(savedCredentials);
+            facultyRepository.save(savedFaculty);
+
+            // Create upload directory for the new user
+            try {
+                createUserUploadDirectory(savedFaculty.getFacultyId());
+                log.info("Upload directory created for user ID: {}", savedFaculty.getFacultyId());
+            } catch (Exception e) {
+                log.warn("Failed to create upload directory for user {}: {}", savedFaculty.getFacultyId(), e.getMessage());
+                // Continue even if directory creation fails
+            }
+
+            log.info("Registration successful for: {} (ID: {}) with username: {} and role: {}",
+                    request.getEmail(), savedFaculty.getFacultyId(), request.getUsername(), role);
+
             return "redirect:/login?success=true";
 
         } catch (Exception e) {
@@ -62,12 +129,82 @@ public class AuthService {
     @Transactional
     public ResponseEntity<?> register(RegisterRequest request) {
         try {
-            log.info("API Registration for: {}", request.getEmail());
-            
-            // Delegate to UserService which handles username and role correctly
-            AuthResponse response = userService.register(request);
-            
-            return ResponseEntity.ok(response);
+            log.info("API Registration for: {} with username: {}", request.getEmail(), request.getUsername());
+
+            // Check if username already exists
+            if (credentialsRepository.existsByUsername(request.getUsername())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
+            }
+
+            // Check if email already exists
+            if (facultyRepository.existsByEmail(request.getEmail())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
+            }
+
+            // Parse role
+            FacultyRole role;
+            try {
+                role = FacultyRole.valueOf(request.getRole());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + request.getRole()));
+            }
+
+            // Get department if specified
+            Department department = null;
+            if (request.getDepartment() != null && !request.getDepartment().isEmpty()) {
+                department = departmentRepository.findByDeptCode(request.getDepartment())
+                        .orElseThrow(() -> new RuntimeException("Department not found: " + request.getDepartment()));
+            }
+
+            // Create faculty entity
+            Faculty faculty = Faculty.builder()
+                    .firstName(request.getFirstName())
+                    .middleName(request.getMiddleName())
+                    .lastName(request.getLastName())
+                    .suffix(request.getSuffix())
+                    .email(request.getEmail())
+                    .telNo(request.getTelNo())
+                    .address(request.getAddress())
+                    .role(role)
+                    .department(department)
+                    .build();
+
+            // Save faculty
+            Faculty savedFaculty = facultyRepository.save(faculty);
+            log.info("Faculty created with ID: {}", savedFaculty.getFacultyId());
+
+            // Create credentials
+            SystemCredentials credentials = SystemCredentials.builder()
+                    .faculty(savedFaculty)
+                    .username(request.getUsername())
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .accountType(role.toString())
+                    .build();
+
+            // Save credentials
+            SystemCredentials savedCredentials = credentialsRepository.save(credentials);
+            log.info("Credentials created for faculty ID: {}", savedFaculty.getFacultyId());
+
+            // Associate credentials with faculty
+            savedFaculty.setSystemCredentials(savedCredentials);
+            facultyRepository.save(savedFaculty);
+
+            // Create upload directory for the new user
+            try {
+                createUserUploadDirectory(savedFaculty.getFacultyId());
+                log.info("Upload directory created for user ID: {}", savedFaculty.getFacultyId());
+            } catch (Exception e) {
+                log.warn("Failed to create upload directory for user {}: {}", savedFaculty.getFacultyId(), e.getMessage());
+                // Continue even if directory creation fails
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Registration successful",
+                    "userId", savedFaculty.getFacultyId(),
+                    "username", request.getUsername(),
+                    "role", role.toString()
+            ));
 
         } catch (Exception e) {
             log.error("Registration error: ", e);
