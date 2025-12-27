@@ -1,8 +1,10 @@
 package com.fpms.fpms_backend.controller;
 
+import com.fpms.fpms_backend.dto.AuthResponse;
 import com.fpms.fpms_backend.dto.LoginRequest;
 import com.fpms.fpms_backend.dto.RegisterRequest;
 import com.fpms.fpms_backend.service.AuthService;
+import com.fpms.fpms_backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,12 +20,17 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService; // Add UserService
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            log.info("Registration request for: {}", request.getEmail());
-            return authService.register(request);
+            log.info("Registration request for: {} with username: {}", request.getEmail(), request.getUsername());
+            
+            // Use UserService which respects the username and role from the request
+            AuthResponse response = userService.register(request);
+            return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
             log.error("Registration error: ", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
