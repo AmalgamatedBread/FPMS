@@ -1,10 +1,8 @@
 package com.fpms.fpms_backend.service;
 
 import com.fpms.fpms_backend.dto.LoginRequest;
-import com.fpms.fpms_backend.dto.RegisterRequest;
 import com.fpms.fpms_backend.model.entities.Faculty;
 import com.fpms.fpms_backend.model.entities.SystemCredentials;
-import com.fpms.fpms_backend.model.enums.FacultyRole;
 import com.fpms.fpms_backend.repository.FacultyRepository;
 import com.fpms.fpms_backend.repository.SystemCredentialsRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,115 +37,6 @@ public class AuthService {
 
     // Upload directory
     private final String UPLOAD_BASE_DIR = "uploads";
-
-    @Transactional
-    public String processRegister(RegisterRequest request) {
-        try {
-            log.info("Processing registration for: {}", request.getEmail());
-
-            // Check if email already exists
-            if (facultyRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email is already registered");
-            }
-
-            // Create Faculty entity
-            Faculty faculty = Faculty.builder()
-                    .firstName(request.getFirstName())
-                    .middleName(request.getMiddleName())
-                    .lastName(request.getLastName())
-                    .suffix(request.getSuffix())
-                    .email(request.getEmail())
-                    .telNo(request.getTelNo())
-                    .address(request.getAddress())
-                    .role(FacultyRole.FACULTY) // Default role
-                    .department(null) // No department assigned initially
-                    .build();
-
-            // Save faculty first to get ID
-            Faculty savedFaculty = facultyRepository.save(faculty);
-            log.info("Faculty saved with ID: {}", savedFaculty.getFacultyId());
-
-            // Create SystemCredentials
-            String username = generateUsername(request.getFirstName(), request.getLastName());
-            String passwordHash = passwordEncoder.encode(request.getPassword());
-
-            SystemCredentials credentials = SystemCredentials.builder()
-                    .username(username)
-                    .passwordHash(passwordHash)
-                    .accountType("FACULTY")
-                    .faculty(savedFaculty)
-                    .build();
-
-            credentialsRepository.save(credentials);
-
-            log.info("Registration successful for: {} (ID: {}) with username: {}",
-                    request.getEmail(), savedFaculty.getFacultyId(), username);
-
-            // CREATE USER UPLOAD DIRECTORY
-            Long userId = savedFaculty.getFacultyId();
-            createUserUploadDirectory(userId);
-
-            return "redirect:/login?success=true";
-
-        } catch (Exception e) {
-            log.error("Registration failed: ", e);
-            throw new RuntimeException("Registration failed: " + e.getMessage());
-        }
-    }
-
-    @Transactional
-    public ResponseEntity<?> register(RegisterRequest request) {
-        try {
-            log.info("API Registration for: {}", request.getEmail());
-
-            // Check if email already exists
-            if (facultyRepository.existsByEmail(request.getEmail())) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered"));
-            }
-
-            // Create Faculty entity
-            Faculty faculty = Faculty.builder()
-                    .firstName(request.getFirstName())
-                    .middleName(request.getMiddleName())
-                    .lastName(request.getLastName())
-                    .suffix(request.getSuffix())
-                    .email(request.getEmail())
-                    .telNo(request.getTelNo())
-                    .address(request.getAddress())
-                    .role(FacultyRole.FACULTY)
-                    .department(null)
-                    .build();
-
-            Faculty savedFaculty = facultyRepository.save(faculty);
-
-            // Create SystemCredentials
-            String username = generateUsername(request.getFirstName(), request.getLastName());
-            String passwordHash = passwordEncoder.encode(request.getPassword());
-
-            SystemCredentials credentials = SystemCredentials.builder()
-                    .username(username)
-                    .passwordHash(passwordHash)
-                    .accountType("FACULTY")
-                    .faculty(savedFaculty)
-                    .build();
-
-            credentialsRepository.save(credentials);
-
-            // Create upload directory
-            createUserUploadDirectory(savedFaculty.getFacultyId());
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Registration successful",
-                    "userId", savedFaculty.getFacultyId(),
-                    "username", username
-            ));
-
-        } catch (Exception e) {
-            log.error("Registration error: ", e);
-            return ResponseEntity.badRequest().body(Map.of("error", "Registration failed: " + e.getMessage()));
-        }
-    }
 
     @Transactional
     public ResponseEntity<?> login(LoginRequest request) {
@@ -223,7 +111,7 @@ public class AuthService {
     /**
      * Creates upload directories for a new user
      */
-    private void createUserUploadDirectory(Long userId) {
+    public void createUserUploadDirectory(Long userId) {
         try {
             log.info("Creating upload directories for user ID: {}", userId);
 
@@ -292,34 +180,6 @@ public class AuthService {
             log.error("Error creating directories for existing users: ", e);
             throw new RuntimeException("Failed to create directories for existing users: " + e.getMessage());
         }
-    }
-
-    /**
-     * Generates a unique username from first and last name
-     */
-    private String generateUsername(String firstName, String lastName) {
-        if (firstName == null || firstName.isEmpty() || lastName == null || lastName.isEmpty()) {
-            throw new IllegalArgumentException("First name and last name are required");
-        }
-
-        String baseUsername = (firstName.charAt(0) + lastName).toLowerCase()
-                .replaceAll("[^a-z0-9]", ""); // Remove special characters
-
-        String username = baseUsername;
-        int counter = 1;
-
-        // Check if username exists and append numbers if needed
-        while (credentialsRepository.findByUsername(username).isPresent()) {
-            username = baseUsername + counter;
-            counter++;
-
-            // Safety check to prevent infinite loop
-            if (counter > 100) {
-                throw new RuntimeException("Could not generate unique username");
-            }
-        }
-
-        return username;
     }
 
     /**
