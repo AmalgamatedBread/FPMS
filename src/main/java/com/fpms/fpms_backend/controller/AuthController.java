@@ -26,11 +26,7 @@ public class AuthController {
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
             log.info("Registration request for: {} with username: {}", request.getEmail(), request.getUsername());
-            
-            // Use UserService which respects the username and role from the request
-            AuthResponse response = userService.register(request);
-            return ResponseEntity.ok(response);
-            
+            return authService.register(request);
         } catch (Exception e) {
             log.error("Registration error: ", e);
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -121,3 +117,4 @@ public class AuthController {
         ));
     }
 }
+
