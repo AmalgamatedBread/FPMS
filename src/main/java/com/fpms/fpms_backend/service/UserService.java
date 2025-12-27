@@ -15,6 +15,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -24,11 +29,13 @@ public class UserService {
     private final SystemCredentialsRepository credentialsRepository;
     private final PasswordEncoder passwordEncoder;
     private final DepartmentRepository departmentRepository;
-    private final AuthService authService; // Add AuthService dependency
+
+    // Upload directory
+    private final String UPLOAD_BASE_DIR = "uploads";
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        log.info("Registering new user: {}", request.getUsername());
+        log.info("Registering new user via UserService: {}", request.getUsername());
 
         // Check if username already exists
         if (credentialsRepository.existsByUsername(request.getUsername())) {
@@ -90,7 +97,7 @@ public class UserService {
 
         // Create upload directory for the new user
         try {
-            authService.createUserUploadDirectory(savedFaculty.getFacultyId());
+            createUserUploadDirectory(savedFaculty.getFacultyId());
             log.info("Upload directory created for user ID: {}", savedFaculty.getFacultyId());
         } catch (Exception e) {
             log.warn("Failed to create upload directory for user {}: {}", savedFaculty.getFacultyId(), e.getMessage());
@@ -99,6 +106,51 @@ public class UserService {
 
         // Create response
         return createAuthResponse(savedFaculty, savedCredentials);
+    }
+
+    /**
+     * Creates upload directories for a user
+     */
+    private void createUserUploadDirectory(Long userId) {
+        try {
+            log.info("Creating upload directories for user ID: {}", userId);
+
+            // Create base uploads directory if it doesn't exist
+            Path baseDir = Paths.get(UPLOAD_BASE_DIR);
+            if (!Files.exists(baseDir)) {
+                Files.createDirectories(baseDir);
+                log.info("Created base upload directory: {}", baseDir.toAbsolutePath());
+            }
+
+            // Create users directory
+            Path usersDir = Paths.get(UPLOAD_BASE_DIR + "/users");
+            if (!Files.exists(usersDir)) {
+                Files.createDirectories(usersDir);
+                log.info("Created users directory: {}", usersDir.toAbsolutePath());
+            }
+
+            // Create user-specific directories
+            String[] directories = {
+                    UPLOAD_BASE_DIR + "/users/" + userId,
+                    UPLOAD_BASE_DIR + "/users/" + userId + "/profile-photos",
+                    UPLOAD_BASE_DIR + "/users/" + userId + "/documents",
+                    UPLOAD_BASE_DIR + "/users/" + userId + "/portfolios"
+            };
+
+            for (String dir : directories) {
+                Path path = Paths.get(dir);
+                if (!Files.exists(path)) {
+                    Files.createDirectories(path);
+                    log.info("Created directory: {}", path.toAbsolutePath());
+                }
+            }
+
+            log.info("Upload directories created successfully for user ID: {}", userId);
+
+        } catch (IOException e) {
+            log.error("Failed to create upload directories for user {}: {}", userId, e.getMessage());
+            // Don't throw exception - registration should still succeed even if dirs fail
+        }
     }
 
     private AuthResponse createAuthResponse(Faculty faculty, SystemCredentials credentials) {
