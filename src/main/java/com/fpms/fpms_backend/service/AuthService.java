@@ -1,6 +1,8 @@
 package com.fpms.fpms_backend.service;
 
+import com.fpms.fpms_backend.dto.AuthResponse;
 import com.fpms.fpms_backend.dto.LoginRequest;
+import com.fpms.fpms_backend.dto.RegisterRequest;
 import com.fpms.fpms_backend.model.entities.Faculty;
 import com.fpms.fpms_backend.model.entities.SystemCredentials;
 import com.fpms.fpms_backend.repository.FacultyRepository;
@@ -34,9 +36,44 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final DepartmentService departmentService;
     private final AuthenticationManager authenticationManager;
+    private final UserService userService; // Add UserService dependency
 
     // Upload directory
     private final String UPLOAD_BASE_DIR = "uploads";
+
+    @Transactional
+    public String processRegister(RegisterRequest request) {
+        try {
+            log.info("Processing registration form for: {}", request.getEmail());
+            
+            // Delegate to UserService which handles username and role correctly
+            AuthResponse response = userService.register(request);
+            
+            log.info("Registration successful for user ID: {}", response.getUser().getFacultyId());
+            
+            return "redirect:/login?success=true";
+
+        } catch (Exception e) {
+            log.error("Registration failed: ", e);
+            throw new RuntimeException("Registration failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<?> register(RegisterRequest request) {
+        try {
+            log.info("API Registration for: {}", request.getEmail());
+            
+            // Delegate to UserService which handles username and role correctly
+            AuthResponse response = userService.register(request);
+            
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Registration error: ", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "Registration failed: " + e.getMessage()));
+        }
+    }
 
     @Transactional
     public ResponseEntity<?> login(LoginRequest request) {
